@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import type { AutomataGraph } from '@/lib/automata/types'
+import { TracePanel } from './TracePanel'
 import type {
   DFAConfig,
   NFAConfig,
@@ -61,6 +62,7 @@ export function SimulationBar({
   const [simConfig, setSimConfig] = useState<SimConfig | null>(null)
   const [autoPlay, setAutoPlay] = useState(false)
   const [autoSpeed, setAutoSpeed] = useState(600)
+  const [traceOpen, setTraceOpen] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isSimulating = simConfig !== null
@@ -422,6 +424,13 @@ export function SimulationBar({
               <SimButton onClick={handleReset} variant="danger">
                 ↺ Reset
               </SimButton>
+              <SimButton
+                onClick={() => setTraceOpen(true)}
+                variant="default"
+                disabled={!simConfig || simConfig.history.length === 0}
+              >
+                ≡ Trace
+              </SimButton>
             </>
           )}
         </div>
@@ -480,6 +489,13 @@ export function SimulationBar({
       </div>
 
       {/* History */}
+      <TracePanel
+        graph={graph}
+        simConfig={simConfig}
+        isOpen={traceOpen}
+        onClose={() => setTraceOpen(false)}
+      />
+
       {simConfig && simConfig.history.length > 0 && (
         <div className="px-4 pb-2 overflow-x-auto">
           <div className="flex gap-1 items-center">

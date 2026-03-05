@@ -8,6 +8,7 @@ import appCss from '../styles.css?url'
 import type { QueryClient } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
+import { LoadingScreenRemover } from '@/components/loading-screen'
 import { getBaseUrl } from '@/server/functions/request'
 import {
   createOGMetaTags,
@@ -101,12 +102,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body style={{ margin: 0, padding: 0, overflow: 'hidden' }}>
+        {/* Static loading overlay — visible before React hydrates */}
+        <div id="app-loading">
+          <div className="app-loading__spinner">
+            <div className="app-loading__ring" />
+            <div className="app-loading__dot" />
+          </div>
+          <span className="app-loading__title">AutomataStudio</span>
+          <span className="app-loading__subtitle">Loading…</span>
+        </div>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
         >
+          {/* Fades out the overlay once React is interactive */}
+          <LoadingScreenRemover />
           {children}
           <Toaster />
         </ThemeProvider>

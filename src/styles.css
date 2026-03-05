@@ -136,3 +136,85 @@ code {
     @apply bg-background text-foreground;
   }
 }
+
+/* ─── App Loading Screen ──────────────────────────────────────────────────── */
+
+#app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background-color: oklch(0.141 0.005 285.823);
+  color: oklch(0.985 0 0);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#app-loading.app-loading--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Spinning state-node ring */
+.app-loading__spinner {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.app-loading__ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid oklch(0.274 0.006 286.033);
+  border-top-color: oklch(0.488 0.243 264.376);
+  animation: app-loading-spin 0.9s linear infinite;
+}
+
+.app-loading__dot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-loading__dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: oklch(0.488 0.243 264.376);
+  box-shadow: 0 0 12px 2px oklch(0.488 0.243 264.376 / 0.5);
+}
+
+/* Title */
+.app-loading__title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: oklch(0.985 0 0);
+}
+
+.app-loading__subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: oklch(0.705 0.015 286.067);
+  letter-spacing: 0.06em;
+  animation: app-loading-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes app-loading-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
