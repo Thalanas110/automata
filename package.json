@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "generate:routes": "tsr generate",
-    "clean": "rm -rf .ouptut dist node_modules/.vite .nitro .tanstack"
+    "clean": "rm -rf .ouptut dist node_modules/.vite .nitro .tanstack .netlify"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

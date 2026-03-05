@@ -9,5 +9,6 @@ count.txt
 .tanstack
 .output
 .vinxi
+.netlify
 todos.json
 .eslintcache
