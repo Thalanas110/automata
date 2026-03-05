@@ -22,7 +22,7 @@ export function AIPanel({ graph, onApplyMachine }: AIPanelProps) {
       id: '0',
       role: 'assistant',
       content:
-        "Hello! I'm your automata theory assistant. I can help you:\n\n• **Generate** automata from natural language descriptions\n• **Explain** machine behavior and accepted languages\n• **Debug** rejected inputs and suggest fixes\n• **Suggest** missing transitions\n\nTry a quick prompt below or describe what you need!",
+        "Hello! I'm your automata theory assistant. I can help you with tasks **within this application**:\n\n• **Generate** automata from natural language descriptions\n• **Explain** machine behavior and accepted languages\n• **Debug** rejected inputs and suggest fixes\n• **Suggest** missing transitions\n\nNote: I only assist with automata theory and this application's features. Try a quick prompt below!",
       timestamp: Date.now(),
     },
   ])
