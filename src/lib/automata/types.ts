@@ -321,6 +321,7 @@ export interface MultiStringResult {
   rejected: boolean
   steps: number
   output?: string // for Mealy/Moore
+  simConfig?: SimulationConfig
 }
 
 // ─── Pumping Lemma Types ─────────────────────────────────────────────────────

@@ -751,6 +751,7 @@ export function runMultipleStrings(
             accepted: r.accepted === true,
             rejected: r.rejected,
             steps: r.step,
+            simConfig: r,
           }
         }
         case 'NFA': {
@@ -760,6 +761,7 @@ export function runMultipleStrings(
             accepted: r.accepted === true,
             rejected: r.rejected,
             steps: r.step,
+            simConfig: r,
           }
         }
         case 'PDA': {
@@ -769,6 +771,7 @@ export function runMultipleStrings(
             accepted: r.accepted === true,
             rejected: r.rejected,
             steps: r.step,
+            simConfig: r,
           }
         }
         case 'TM': {
@@ -778,6 +781,7 @@ export function runMultipleStrings(
             accepted: r.accepted === true,
             rejected: r.rejected,
             steps: r.step,
+            simConfig: r,
           }
         }
         case 'Mealy': {
@@ -788,6 +792,7 @@ export function runMultipleStrings(
             rejected: r.rejected,
             steps: r.step,
             output: r.output,
+            simConfig: r,
           }
         }
         case 'Moore': {
@@ -798,6 +803,7 @@ export function runMultipleStrings(
             rejected: r.rejected,
             steps: r.step,
             output: r.output,
+            simConfig: r,
           }
         }
         case 'MultiTM': {
@@ -807,6 +813,7 @@ export function runMultipleStrings(
             accepted: r.accepted === true,
             rejected: r.rejected,
             steps: r.step,
+            simConfig: r,
           }
         }
         default:

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { AutomataGraph, MultiStringResult } from '@/lib/automata/types'
 import { runMultipleStrings } from '@/lib/automata/simulator'
+import { TracePanel } from './TracePanel'
 
 interface MultiStringTesterProps {
   graph: AutomataGraph
@@ -17,6 +18,8 @@ export function MultiStringTester({
   const [results, setResults] = useState<MultiStringResult[]>([])
   const [ran, setRan] = useState(false)
   const [filter, setFilter] = useState<'all' | 'accepted' | 'rejected'>('all')
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
+  const [traceOpen, setTraceOpen] = useState(false)
 
   const handleRun = useCallback(() => {
     const lines = inputText
@@ -27,12 +30,16 @@ export function MultiStringTester({
     const res = runMultipleStrings(graph, lines)
     setResults(res)
     setRan(true)
+    setSelectedIdx(null)
+    setTraceOpen(false)
   }, [inputText, graph])
 
   const handleClear = () => {
     setInputText('')
     setResults([])
     setRan(false)
+    setSelectedIdx(null)
+    setTraceOpen(false)
   }
 
   const filtered = results.filter((r) => {
@@ -147,8 +154,8 @@ export function MultiStringTester({
           <div className="flex flex-col flex-1 min-h-0 p-3">
             {ran && results.length > 0 && (
               <div className="flex items-center gap-3 mb-3">
-                {/* Stats */}
-                <div className="flex gap-2 flex-1">
+                {/* Stats + Traceback */}
+                <div className="flex gap-2 flex-1 items-center">
                   <span className="text-xs font-mono text-emerald-400">
                     ✓ {acceptedCount} accepted
                   </span>
@@ -158,6 +165,14 @@ export function MultiStringTester({
                   <span className="text-xs font-mono text-gray-600">
                     / {results.length} total
                   </span>
+                  {selectedIdx !== null && (
+                    <button
+                      onClick={() => setTraceOpen(true)}
+                      className="ml-auto px-2.5 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 transition-colors whitespace-nowrap"
+                    >
+                      ⋯ Traceback
+                    </button>
+                  )}
                 </div>
 
                 {/* Filter tabs */}
@@ -195,45 +210,64 @@ export function MultiStringTester({
                   No results match filter
                 </div>
               ) : (
-                filtered.map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 px-3 py-2 rounded border transition-colors ${
-                      r.accepted
-                        ? 'bg-emerald-500/5 border-emerald-500/20'
-                        : 'bg-red-500/5 border-red-500/20'
-                    }`}
-                  >
-                    <span
-                      className={`text-xs font-mono font-bold w-3 ${
-                        r.accepted ? 'text-emerald-400' : 'text-red-400'
+                filtered.map((r, i) => {
+                  // find the true index in `results` (before filtering) to compare with selectedIdx
+                  const trueIdx = results.indexOf(r)
+                  const isSelected = selectedIdx === trueIdx
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedIdx(isSelected ? null : trueIdx)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded border transition-colors cursor-pointer select-none ${
+                        isSelected
+                          ? 'bg-cyan-500/15 border-cyan-500/40 ring-1 ring-cyan-500/30'
+                          : r.accepted
+                            ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                            : 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'
                       }`}
                     >
-                      {r.accepted ? '✓' : '✗'}
-                    </span>
-                    <span
-                      className={`flex-1 text-xs font-mono truncate ${
-                        r.accepted ? 'text-emerald-200' : 'text-red-200'
-                      }`}
-                    >
-                      {r.input === '' ? (
-                        <span className="italic text-gray-500">ε (empty)</span>
-                      ) : (
-                        r.input
-                      )}
-                    </span>
-                    {showOutput && r.output !== undefined && (
-                      <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-                        out: {r.output || 'ε'}
+                      <span
+                        className={`text-xs font-mono font-bold w-3 ${
+                          r.accepted ? 'text-emerald-400' : 'text-red-400'
+                        }`}
+                      >
+                        {r.accepted ? '✓' : '✗'}
                       </span>
-                    )}
-                    <span className="text-[9px] font-mono text-gray-600 whitespace-nowrap">
-                      {r.steps} steps
-                    </span>
-                  </div>
-                ))
+                      <span
+                        className={`flex-1 text-xs font-mono truncate ${
+                          isSelected
+                            ? 'text-cyan-200'
+                            : r.accepted
+                              ? 'text-emerald-200'
+                              : 'text-red-200'
+                        }`}
+                      >
+                        {r.input === '' ? (
+                          <span className="italic text-gray-500">ε (empty)</span>
+                        ) : (
+                          r.input
+                        )}
+                      </span>
+                      {showOutput && r.output !== undefined && (
+                        <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                          out: {r.output || 'ε'}
+                        </span>
+                      )}
+                      <span className="text-[9px] font-mono text-gray-600 whitespace-nowrap">
+                        {r.steps} steps
+                      </span>
+                    </div>
+                  )
+                })
               )}
             </div>
+
+            {/* Hint */}
+            {ran && results.length > 0 && selectedIdx === null && (
+              <div className="text-[9px] font-mono text-gray-600 text-center pt-1">
+                click a row to select · then use Traceback
+              </div>
+            )}
 
             {/* Export results */}
             {ran && results.length > 0 && (
@@ -265,6 +299,16 @@ export function MultiStringTester({
           </div>
         </div>
       </div>
+
+      {/* Traceback panel — rendered outside the modal so it can stack on top */}
+      {traceOpen && selectedIdx !== null && results[selectedIdx]?.simConfig && (
+        <TracePanel
+          graph={graph}
+          simConfig={results[selectedIdx].simConfig!}
+          isOpen={traceOpen}
+          onClose={() => setTraceOpen(false)}
+        />
+      )}
     </div>
   )
 }
