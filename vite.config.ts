@@ -19,7 +19,7 @@ const config = defineConfig({
     forSites &&
       nitroV2Plugin({
         compatibilityDate: '2025-10-08',
-        preset: (process.env.NITRO_PRESET ?? 'node') as 'node' | 'netlify',
+        preset: (process.env.NITRO_PRESET ?? 'node') as 'node' | 'netlify' | 'vercel',
       }),
     devtoolsJson(),
     viteReact(),
