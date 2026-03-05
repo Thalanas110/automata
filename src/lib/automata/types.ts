@@ -354,7 +354,7 @@ export interface AIGeneratedMachine {
 
 // ─── Editor State ────────────────────────────────────────────────────────────
 
-export type EditorTool = 'select' | 'addState' | 'addTransition' | 'delete'
+export type EditorTool = 'select' | 'addState' | 'addTransition' | 'delete' | 'pan'
 
 export interface EditorState {
   tool: EditorTool

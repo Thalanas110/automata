@@ -104,6 +104,13 @@ function Index() {
             transitionSource: null,
           }))
           break
+        case 'h':
+          setEditorState((es) => ({
+            ...es,
+            tool: 'pan',
+            transitionSource: null,
+          }))
+          break
         case 'escape':
           setEditorState((es) => ({
             ...es,

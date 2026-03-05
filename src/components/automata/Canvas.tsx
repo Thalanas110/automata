@@ -73,10 +73,24 @@ export function AutomataCanvas({
 
   const handleSVGMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
-      if (
+      const onBackground =
         e.target === svgRef.current ||
         (e.target as Element).tagName === 'rect'
-      ) {
+
+      // Pan tool: left-click anywhere on the SVG starts panning
+      if (editorState.tool === 'pan' && e.button === 0) {
+        setIsPanning(true)
+        panStart.current = {
+          mx: e.clientX,
+          my: e.clientY,
+          vx: viewBox.x,
+          vy: viewBox.y,
+        }
+        e.preventDefault()
+        return
+      }
+
+      if (onBackground) {
         if (editorState.tool === 'addState') return
         if (e.button === 1 || (e.button === 0 && e.altKey)) {
           setIsPanning(true)
@@ -126,6 +140,8 @@ export function AutomataCanvas({
 
   const handleStateMouseDown = useCallback(
     (e: React.MouseEvent, state: State) => {
+      // In pan mode, let the event bubble up to the SVG so panning works
+      if (editorState.tool === 'pan') return
       e.stopPropagation()
       if (editorState.tool === 'delete') {
         const newStates = graph.states.filter((s) => s.id !== state.id)
@@ -181,12 +197,13 @@ export function AutomataCanvas({
         const rect = svg.getBoundingClientRect()
         const scaleX = viewBox.w / rect.width
         const scaleY = viewBox.h / rect.height
-        const dx = (e.clientX - panStart.current.mx) * scaleX
-        const dy = (e.clientY - panStart.current.my) * scaleY
+        const { mx, my, vx, vy } = panStart.current
+        const dx = (e.clientX - mx) * scaleX
+        const dy = (e.clientY - my) * scaleY
         setViewBox((v) => ({
           ...v,
-          x: panStart.current!.vx - dx,
-          y: panStart.current!.vy - dy,
+          x: vx - dx,
+          y: vy - dy,
         }))
         return
       }
@@ -402,7 +419,11 @@ export function AutomataCanvas({
               ? 'crosshair'
               : isPanning
                 ? 'grabbing'
-                : 'default',
+                : editorState.tool === 'pan'
+                  ? 'grab'
+                  : editorState.tool === 'delete'
+                    ? 'not-allowed'
+                    : 'default',
         }}
       >
         <defs>
@@ -716,6 +737,7 @@ export function AutomataCanvas({
           editorState.transitionSource &&
           'Click target state'}
         {editorState.tool === 'delete' && 'Click state or transition to delete'}
+      {editorState.tool === 'pan' && 'Drag to pan · Scroll to zoom'}
       </div>
     </div>
   )

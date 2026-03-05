@@ -21,6 +21,7 @@ interface ToolbarProps {
 
 const TOOLS: { id: EditorTool; label: string; icon: string; hint: string }[] = [
   { id: 'select', label: 'Select', icon: '↖', hint: 'Select & drag states' },
+  { id: 'pan', label: 'Pan', icon: '✥', hint: 'Drag to pan the canvas (H)' },
   {
     id: 'addState',
     label: 'State',
@@ -148,6 +149,7 @@ export function Toolbar({
       {isCanvasType && (
         <div className="hidden lg:flex items-center gap-2 text-[9px] font-mono text-gray-600">
           <span>S=Select</span>
+          <span>H=Pan</span>
           <span>N=State</span>
           <span>T=Arrow</span>
           <span>D=Delete</span>
