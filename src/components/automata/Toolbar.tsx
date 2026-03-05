@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { EditorTool, AutomataGraph } from '@/lib/automata/types'
 import {
   exportToJFLAP,
@@ -52,7 +52,25 @@ export function Toolbar({
   onPumpingLemma,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const isCanvasType = CANVAS_TYPES.includes(graph.type)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Close menu when clicking outside
+  const handleOutsideClick = useCallback((e: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      setMenuOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    } else {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [menuOpen, handleOutsideClick])
 
   function downloadFile(content: string, filename: string, type: string) {
     const blob = new Blob([content], { type })
@@ -102,23 +120,23 @@ export function Toolbar({
   }
 
   return (
-    <div className="bg-[#111214] border-b border-[#1e2028] flex items-center gap-2 px-4 py-2 select-none">
+    <div className="bg-[#111214] border-b border-[#1e2028] flex items-center gap-2 px-4 py-2 select-none relative">
       {/* Logo */}
-      <div className="flex items-center gap-2 mr-3">
+      <div className="flex items-center gap-2 mr-3 shrink-0">
         <div className="w-6 h-6 rounded bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center">
           <span className="text-cyan-400 text-[10px] font-mono font-bold">
             A
           </span>
         </div>
         <span
-          className="text-sm font-bold text-white"
+          className="text-sm font-bold text-white hidden xs:inline"
           style={{ fontFamily: 'Syne, sans-serif' }}
         >
           Automata<span className="text-cyan-400">Studio</span>
         </span>
       </div>
 
-      <div className="h-5 w-px bg-[#2d3748]" />
+      <div className="h-5 w-px bg-[#2d3748] shrink-0" />
 
       {/* Edit tools (only for canvas types) */}
       {isCanvasType && (
@@ -136,18 +154,18 @@ export function Toolbar({
                 }`}
               >
                 <span className="text-sm leading-none">{tool.icon}</span>
-                <span className="hidden sm:inline">{tool.label}</span>
+                <span className="hidden md:inline">{tool.label}</span>
               </button>
             ))}
           </div>
 
-          <div className="h-5 w-px bg-[#2d3748]" />
+          <div className="h-5 w-px bg-[#2d3748] shrink-0" />
         </>
       )}
 
-      {/* Keyboard hints */}
+      {/* Keyboard hints — only on large screens */}
       {isCanvasType && (
-        <div className="hidden lg:flex items-center gap-2 text-[9px] font-mono text-gray-600">
+        <div className="hidden xl:flex items-center gap-2 text-[9px] font-mono text-gray-600">
           <span>S=Select</span>
           <span>H=Pan</span>
           <span>N=State</span>
@@ -157,15 +175,15 @@ export function Toolbar({
       )}
 
       {!isCanvasType && (
-        <div className="text-[10px] font-mono text-gray-500">
+        <div className="text-[10px] font-mono text-gray-500 hidden sm:block">
           {graph.type} editor active
         </div>
       )}
 
       <div className="flex-1" />
 
-      {/* Analysis tools */}
-      <div className="flex items-center gap-1">
+      {/* ── Desktop: full action bar (hidden below lg) ── */}
+      <div className="hidden lg:flex items-center gap-1">
         <button
           onClick={onMultiTest}
           title="Test multiple strings at once"
@@ -173,7 +191,7 @@ export function Toolbar({
           className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           <span>⊞</span>
-          <span className="hidden sm:inline">Multi-Test</span>
+          <span>Multi-Test</span>
         </button>
         <button
           onClick={onPumpingLemma}
@@ -181,14 +199,13 @@ export function Toolbar({
           className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono text-gray-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
         >
           <span>λ</span>
-          <span className="hidden sm:inline">Pumping</span>
+          <span>Pumping</span>
         </button>
       </div>
 
-      <div className="h-5 w-px bg-[#2d3748]" />
+      <div className="hidden lg:block h-5 w-px bg-[#2d3748]" />
 
-      {/* File operations */}
-      <div className="flex items-center gap-1">
+      <div className="hidden lg:flex items-center gap-1">
         <button
           onClick={handleExportJSON}
           title="Export as JSON"
@@ -211,13 +228,6 @@ export function Toolbar({
         >
           ↑ Import
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.jff,.xml"
-          className="hidden"
-          onChange={handleImport}
-        />
         <button
           onClick={onClear}
           title="Clear canvas"
@@ -227,12 +237,12 @@ export function Toolbar({
         </button>
       </div>
 
-      <div className="h-5 w-px bg-[#2d3748]" />
+      <div className="hidden lg:block h-5 w-px bg-[#2d3748]" />
 
-      {/* AI toggle */}
+      {/* AI toggle — always visible on desktop */}
       <button
         onClick={onToggleAI}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono transition-all ${
+        className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono transition-all ${
           aiPanelOpen
             ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
             : 'text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10'
@@ -241,6 +251,110 @@ export function Toolbar({
         <span>✦</span>
         <span>AI</span>
       </button>
+
+      {/* ── Mobile / tablet: collapsed menu (visible below lg) ── */}
+      <div className="flex lg:hidden items-center gap-1" ref={menuRef}>
+        {/* AI button stays visible as an icon */}
+        <button
+          onClick={onToggleAI}
+          title="Toggle AI panel"
+          className={`flex items-center px-2 py-1 rounded text-xs font-mono transition-all ${
+            aiPanelOpen
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+              : 'text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+          }`}
+        >
+          ✦
+        </button>
+
+        {/* Hamburger */}
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          title="More actions"
+          className={`flex flex-col justify-center items-center w-7 h-7 gap-[4px] rounded transition-all ${
+            menuOpen
+              ? 'bg-[#1e2028] text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b1e]'
+          }`}
+          aria-label="Open menu"
+        >
+          <span
+            className={`block w-4 h-0.5 bg-current transition-transform duration-200 ${menuOpen ? 'translate-y-[5px] rotate-45' : ''}`}
+          />
+          <span
+            className={`block w-4 h-0.5 bg-current transition-opacity duration-200 ${menuOpen ? 'opacity-0' : ''}`}
+          />
+          <span
+            className={`block w-4 h-0.5 bg-current transition-transform duration-200 ${menuOpen ? '-translate-y-[5px] -rotate-45' : ''}`}
+          />
+        </button>
+
+        {/* Dropdown */}
+        {menuOpen && (
+          <div className="absolute right-4 top-full mt-1 z-50 bg-[#16181c] border border-[#2d3748] rounded-lg shadow-xl py-1 min-w-[170px]">
+            {/* Analysis */}
+            <div className="px-3 py-1 text-[9px] font-mono text-gray-600 uppercase tracking-widest">
+              Analysis
+            </div>
+            <button
+              onClick={() => { onMultiTest(); setMenuOpen(false) }}
+              disabled={!isCanvasType}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <span>⊞</span> Multi-Test
+            </button>
+            <button
+              onClick={() => { onPumpingLemma(); setMenuOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
+            >
+              <span>λ</span> Pumping Lemma
+            </button>
+
+            <div className="my-1 border-t border-[#2d3748]" />
+
+            {/* File ops */}
+            <div className="px-3 py-1 text-[9px] font-mono text-gray-600 uppercase tracking-widest">
+              File
+            </div>
+            <button
+              onClick={() => { handleExportJSON(); setMenuOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-green-400 hover:bg-green-400/10 transition-all"
+            >
+              ↓ Export JSON
+            </button>
+            <button
+              onClick={() => { handleExportJFLAP(); setMenuOpen(false) }}
+              disabled={!isCanvasType}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              ↓ Export JFLAP
+            </button>
+            <button
+              onClick={() => { fileInputRef.current?.click(); setMenuOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 transition-all"
+            >
+              ↑ Import
+            </button>
+
+            <div className="my-1 border-t border-[#2d3748]" />
+
+            <button
+              onClick={() => { onClear(); setMenuOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+            >
+              ✕ Clear
+            </button>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,.jff,.xml"
+        className="hidden"
+        onChange={handleImport}
+      />
     </div>
   )
 }
