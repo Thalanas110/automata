@@ -5,6 +5,7 @@ import { groqChatFn } from '@/server/functions/groq'
 interface AIPanelProps {
   graph: AutomataGraph
   onApplyMachine: (graph: AutomataGraph) => void
+  onClose?: () => void
 }
 
 const QUICK_PROMPTS = [
@@ -16,7 +17,7 @@ const QUICK_PROMPTS = [
   'Find missing transitions',
 ]
 
-export function AIPanel({ graph, onApplyMachine }: AIPanelProps) {
+export function AIPanel({ graph, onApplyMachine, onClose }: AIPanelProps) {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: '0',
@@ -191,6 +192,15 @@ export function AIPanel({ graph, onApplyMachine }: AIPanelProps) {
         <span className="ml-auto text-[9px] font-mono text-gray-600">
           Groq · LLaMA 3.3
         </span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="xl:hidden ml-2 text-gray-500 hover:text-gray-200 text-sm leading-none px-1"
+            aria-label="Close AI panel"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Messages */}

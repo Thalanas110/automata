@@ -278,9 +278,18 @@ function Index() {
           />
         </div>
 
-        {/* AI Panel */}
+        {/* AI Panel — side panel on xl+, overlay on smaller screens */}
         {aiPanelOpen && (
-          <AIPanel graph={graph} onApplyMachine={handleApplyAIMachine} />
+          <>
+            {/* Backdrop for overlay mode (below xl) */}
+            <div
+              className="xl:hidden fixed inset-0 z-30 bg-black/40"
+              onClick={() => setAiPanelOpen(false)}
+            />
+            <div className="fixed xl:static right-0 top-0 xl:top-auto bottom-0 xl:bottom-auto z-40 xl:z-auto h-full xl:h-auto">
+              <AIPanel graph={graph} onApplyMachine={handleApplyAIMachine} onClose={() => setAiPanelOpen(false)} />
+            </div>
+          </>
         )}
       </div>
 
