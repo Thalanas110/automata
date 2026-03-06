@@ -70,8 +70,7 @@ export function PumpingLemmaPanel({ isOpen, onClose }: PumpingLemmaPanelProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div
-        className="bg-[#111214] border border-[#2d3748] rounded-xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: 760, maxHeight: '88vh' }}
+        className="bg-[#111214] border border-[#2d3748] rounded-xl shadow-2xl flex flex-col overflow-hidden w-[calc(100vw-2rem)] max-w-[760px] max-h-[88vh]"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#1e2028]">
@@ -88,9 +87,9 @@ export function PumpingLemmaPanel({ isOpen, onClose }: PumpingLemmaPanelProps) {
           </button>
         </div>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
           {/* Left: Input panel */}
-          <div className="w-64 border-r border-[#1e2028] flex flex-col p-4 gap-4">
+          <div className="w-full md:w-64 border-b md:border-b-0 border-r-0 md:border-r border-[#1e2028] flex flex-col p-4 gap-4 flex-shrink-0 md:overflow-y-auto">
             {/* Lemma type */}
             <div>
               <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-2">
@@ -184,7 +183,7 @@ export function PumpingLemmaPanel({ isOpen, onClose }: PumpingLemmaPanelProps) {
           </div>
 
           {/* Right: Analysis */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 md:overflow-y-auto p-4">
             {!regularResult && !cfResult ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="text-5xl opacity-20">λ</div>
@@ -215,7 +214,7 @@ export function PumpingLemmaPanel({ isOpen, onClose }: PumpingLemmaPanelProps) {
                   <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-2">
                     Word: &quot;{word}&quot;
                   </div>
-                  <div className="flex gap-0.5">
+                  <div className="flex gap-0.5 overflow-x-auto pb-1">
                     {word.split('').map((ch, i) => (
                       <div
                         key={i}
