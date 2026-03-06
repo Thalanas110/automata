@@ -532,24 +532,46 @@ export function AutomataCanvas({
 
     // Self-loop
     if (t.from === t.to) {
-      const cx = from.x
-      const cy = from.y - STATE_RADIUS - 30
+      const selfLoops = graph.transitions.filter(
+        (other) => other.from === t.from && other.to === t.from,
+      )
+      const index = selfLoops.findIndex((other) => other.id === t.id)
+      const n = selfLoops.length
       const r = 24
+      const SEPARATION = Math.PI / 4
+      const angle = -Math.PI / 2 + (index - (n - 1) / 2) * SEPARATION
+      const outX = Math.cos(angle)
+      const outY = Math.sin(angle)
+      const perpX = -Math.sin(angle)
+      const perpY = Math.cos(angle)
+      const startX = from.x + outX * STATE_RADIUS - perpX * r * 0.8
+      const startY = from.y + outY * STATE_RADIUS - perpY * r * 0.8
+      const c1x = from.x + outX * (STATE_RADIUS + 70) - perpX * r * 2
+      const c1y = from.y + outY * (STATE_RADIUS + 70) - perpY * r * 2
+      const c2x = from.x + outX * (STATE_RADIUS + 70) + perpX * r * 2
+      const c2y = from.y + outY * (STATE_RADIUS + 70) + perpY * r * 2
+      const endX = from.x + outX * STATE_RADIUS + perpX * r * 0.8
+      const endY = from.y + outY * STATE_RADIUS + perpY * r * 0.8
+      const labelX = from.x + outX * (STATE_RADIUS + 50)
+      const labelY = from.y + outY * (STATE_RADIUS + 50)
       return {
-        d: `M ${from.x - r * 0.8} ${from.y - STATE_RADIUS}
-           C ${from.x - r * 2} ${from.y - STATE_RADIUS - 70}
-             ${from.x + r * 2} ${from.y - STATE_RADIUS - 70}
-             ${from.x + r * 0.8} ${from.y - STATE_RADIUS}`,
-        labelX: cx,
-        labelY: cy - 10,
+        d: `M ${startX} ${startY} C ${c1x} ${c1y} ${c2x} ${c2y} ${endX} ${endY}`,
+        labelX,
+        labelY,
         isSelfLoop: true,
       }
     }
 
-    // Check for parallel transitions
-    const reverse = graph.transitions.find(
-      (other) =>
-        other.from === t.to && other.to === t.from && other.id !== t.id,
+    // Find all co-directional transitions (same from → same to)
+    const coDir = graph.transitions.filter(
+      (other) => other.from === t.from && other.to === t.to,
+    )
+    const coIndex = coDir.findIndex((other) => other.id === t.id)
+    const coCount = coDir.length
+
+    // Check for reverse direction (bidirectional pair)
+    const hasReverse = graph.transitions.some(
+      (other) => other.from === t.to && other.to === t.from,
     )
 
     const dx = to.x - from.x
@@ -567,24 +589,29 @@ export function AutomataCanvas({
     const endX = to.x - ux * STATE_RADIUS
     const endY = to.y - uy * STATE_RADIUS
 
-    if (reverse) {
-      const offset = 30
-      const cx1 = startX + nx * offset
-      const cy1 = startY + ny * offset
-      const cx2 = endX + nx * offset
-      const cy2 = endY + ny * offset
+    // Base offset: push all transitions to one side if bidirectional,
+    // then spread each co-directional transition evenly around that base.
+    const SPREAD = 22
+    const baseOffset = hasReverse ? 28 : 0
+    const offset = baseOffset + (coIndex - (coCount - 1) / 2) * SPREAD
+
+    if (offset === 0) {
       return {
-        d: `M ${startX} ${startY} C ${cx1} ${cy1} ${cx2} ${cy2} ${endX} ${endY}`,
-        labelX: (startX + endX) / 2 + nx * (offset + 12),
-        labelY: (startY + endY) / 2 + ny * (offset + 12),
+        d: `M ${startX} ${startY} L ${endX} ${endY}`,
+        labelX: (startX + endX) / 2 + nx * 14,
+        labelY: (startY + endY) / 2 + ny * 14,
         isSelfLoop: false,
       }
     }
 
+    const cx1 = startX + nx * offset
+    const cy1 = startY + ny * offset
+    const cx2 = endX + nx * offset
+    const cy2 = endY + ny * offset
     return {
-      d: `M ${startX} ${startY} L ${endX} ${endY}`,
-      labelX: (startX + endX) / 2 + nx * 14,
-      labelY: (startY + endY) / 2 + ny * 14,
+      d: `M ${startX} ${startY} C ${cx1} ${cy1} ${cx2} ${cy2} ${endX} ${endY}`,
+      labelX: (startX + endX) / 2 + nx * (offset + 12),
+      labelY: (startY + endY) / 2 + ny * (offset + 12),
       isSelfLoop: false,
     }
   }
