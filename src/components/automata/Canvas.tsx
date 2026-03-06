@@ -330,11 +330,15 @@ export function AutomataCanvas({
           t1.clientX - t0.clientX,
           t1.clientY - t0.clientY,
         )
-        const scale = pinchRef.current.dist / newDist
+        // Capture ref values before calling setViewBox — React may invoke the
+        // updater function later (concurrent mode), by which point handleTouchEnd
+        // could have nulled pinchRef.current, causing the crash.
+        const { dist, vw, vh } = pinchRef.current
+        const scale = dist / newDist
         setViewBox((v) => ({
           ...v,
-          w: Math.max(300, Math.min(3000, pinchRef.current!.vw * scale)),
-          h: Math.max(200, Math.min(2000, pinchRef.current!.vh * scale)),
+          w: Math.max(300, Math.min(3000, vw * scale)),
+          h: Math.max(200, Math.min(2000, vh * scale)),
         }))
         return
       }
