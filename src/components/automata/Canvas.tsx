@@ -604,14 +604,14 @@ export function AutomataCanvas({
       }
     }
 
-    const cx1 = startX + nx * offset
-    const cy1 = startY + ny * offset
-    const cx2 = endX + nx * offset
-    const cy2 = endY + ny * offset
+    const midX = (startX + endX) / 2
+    const midY = (startY + endY) / 2
+    const qcx = midX + nx * offset
+    const qcy = midY + ny * offset
     return {
-      d: `M ${startX} ${startY} C ${cx1} ${cy1} ${cx2} ${cy2} ${endX} ${endY}`,
-      labelX: (startX + endX) / 2 + nx * (offset + 12),
-      labelY: (startY + endY) / 2 + ny * (offset + 12),
+      d: `M ${startX} ${startY} Q ${qcx} ${qcy} ${endX} ${endY}`,
+      labelX: midX + nx * (offset + 12),
+      labelY: midY + ny * (offset + 12),
       isSelfLoop: false,
     }
   }
