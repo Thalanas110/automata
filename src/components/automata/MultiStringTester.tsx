@@ -136,7 +136,7 @@ export function MultiStringTester({
             <div className="flex gap-2 mt-auto">
               <button
                 onClick={handleRun}
-                disabled={!inputText.trim()}
+                disabled={graph.states.length === 0}
                 className="flex-1 py-1.5 text-[11px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 ▶ Run All
