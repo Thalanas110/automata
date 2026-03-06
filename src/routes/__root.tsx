@@ -77,6 +77,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       ],
       links: [
         { rel: 'stylesheet', href: appCss },
+        { rel: 'manifest', href: '/manifest.json' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         {
           rel: 'preconnect',
@@ -123,6 +124,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <Toaster />
         </ThemeProvider>
         <Scripts />
+        {/* Register service worker for offline / PWA support */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker'in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'});})}`,
+          }}
+        />
       </body>
     </html>
   )

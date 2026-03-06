@@ -96,6 +96,7 @@
     "typescript": "^5.7.2",
     "vite": "npm:vite@latest",
     "vite-plugin-devtools-json": "^1.0.0",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.0.5",
     "web-vitals": "^4.2.4"
   }

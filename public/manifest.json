@@ -1,6 +1,7 @@
 {
-  "short_name": "Automatons",
-  "name": "Automatons",
+  "name": "AutomataStudio",
+  "short_name": "AutomataStudio",
+  "description": "Interactive automata theory tool for designing and simulating DFA, NFA, PDA, and Turing machines.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,8 +9,11 @@
       "type": "image/x-icon"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "landscape",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#000000",
+  "categories": ["education", "productivity", "utilities"]
 }
