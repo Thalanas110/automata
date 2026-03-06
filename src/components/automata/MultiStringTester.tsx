@@ -56,10 +56,10 @@ export function MultiStringTester({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-6">
       <div
-        className="bg-[#111214] border border-[#2d3748] rounded-xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: 680, maxHeight: '85vh' }}
+        className="bg-[#111214] border border-[#2d3748] rounded-xl shadow-2xl flex flex-col overflow-hidden w-full max-w-[680px]"
+        style={{ maxHeight: '90vh' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#1e2028]">
@@ -79,9 +79,9 @@ export function MultiStringTester({
           </button>
         </div>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
           {/* Left: input */}
-          <div className="flex flex-col w-56 border-r border-[#1e2028] p-3 gap-3">
+          <div className="flex flex-col sm:w-56 border-b sm:border-b-0 sm:border-r border-[#1e2028] p-3 gap-3">
             <div>
               <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-1.5">
                 Input Strings (one per line)
@@ -90,7 +90,7 @@ export function MultiStringTester({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={'ab\n00\n1010\nε\n(empty line = ε)'}
-                className="w-full h-52 bg-[#0e0f11] border border-[#2d3748] rounded px-2 py-1.5 text-xs font-mono text-gray-300 placeholder-gray-700 outline-none focus:border-cyan-500 resize-none"
+                className="w-full h-28 sm:h-52 bg-[#0e0f11] border border-[#2d3748] rounded px-2 py-1.5 text-xs font-mono text-gray-300 placeholder-gray-700 outline-none focus:border-cyan-500 resize-none"
                 spellCheck={false}
               />
             </div>
@@ -153,9 +153,9 @@ export function MultiStringTester({
           {/* Right: results */}
           <div className="flex flex-col flex-1 min-h-0 p-3">
             {ran && results.length > 0 && (
-              <div className="flex items-center gap-3 mb-3">
-                {/* Stats + Traceback */}
-                <div className="flex gap-2 flex-1 items-center">
+              <div className="flex flex-col gap-2 mb-3">
+                {/* Stats row */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="text-xs font-mono text-emerald-400">
                     ✓ {acceptedCount} accepted
                   </span>
@@ -168,7 +168,7 @@ export function MultiStringTester({
                   {selectedIdx !== null && (
                     <button
                       onClick={() => setTraceOpen(true)}
-                      className="ml-auto px-2.5 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 transition-colors whitespace-nowrap"
+                      className="px-2.5 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 transition-colors whitespace-nowrap"
                     >
                       ⋯ Traceback
                     </button>
