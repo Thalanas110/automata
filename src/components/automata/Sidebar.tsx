@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type {
   AutomataGraph,
   State,
@@ -64,6 +64,12 @@ export function Sidebar({
   const [tab, setTab] = useState<'machine' | 'states' | 'transitions'>(
     'machine',
   )
+
+  const [alphabetInput, setAlphabetInput] = useState(graph.alphabet.join(','))
+
+  useEffect(() => {
+    setAlphabetInput(graph.alphabet.join(','))
+  }, [graph.alphabet])
 
   const selectedState = graph.states.find((s) => s.id === selectedStateId)
   const selectedTransition = graph.transitions.find(
@@ -189,8 +195,9 @@ export function Sidebar({
                   <Label>Input Alphabet</Label>
                   <input
                     placeholder="a,b,0,1"
-                    value={graph.alphabet.join(',')}
-                    onChange={(e) =>
+                    value={alphabetInput}
+                    onChange={(e) => setAlphabetInput(e.target.value)}
+                    onBlur={(e) =>
                       onGraphChange({
                         ...graph,
                         alphabet: e.target.value
