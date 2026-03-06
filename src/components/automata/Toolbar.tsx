@@ -25,6 +25,7 @@ interface ToolbarProps {
   onToggleAI: () => void
   onMultiTest: () => void
   onPumpingLemma: () => void
+  onConvert: () => void
   sidebarOpen: boolean
   onToggleSidebar: () => void
 }
@@ -60,6 +61,7 @@ export function Toolbar({
   onToggleAI,
   onMultiTest,
   onPumpingLemma,
+  onConvert,
   sidebarOpen,
   onToggleSidebar,
 }: ToolbarProps) {
@@ -243,6 +245,15 @@ export function Toolbar({
           <span>λ</span>
           <span>Pumping</span>
         </button>
+        <button
+          onClick={onConvert}
+          title="NFA ↔ DFA Converter"
+          disabled={graph.type !== 'DFA' && graph.type !== 'NFA'}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          <span>⇄</span>
+          <span>Convert</span>
+        </button>
       </div>
 
       <div className="hidden lg:block h-5 w-px bg-[#2d3748]" />
@@ -350,6 +361,13 @@ export function Toolbar({
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all"
             >
               <span>λ</span> Pumping Lemma
+            </button>
+            <button
+              onClick={() => { onConvert(); setMenuOpen(false) }}
+              disabled={graph.type !== 'DFA' && graph.type !== 'NFA'}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <span>⇄</span> Convert (DFA/NFA)
             </button>
 
             <div className="my-1 border-t border-[#2d3748]" />

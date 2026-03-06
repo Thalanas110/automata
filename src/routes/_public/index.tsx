@@ -21,6 +21,7 @@ import { AIPanel } from '@/components/automata/AIPanel'
 import { Toolbar } from '@/components/automata/Toolbar'
 import { MultiStringTester } from '@/components/automata/MultiStringTester'
 import { PumpingLemmaPanel } from '@/components/automata/PumpingLemmaPanel'
+import { ConverterPanel } from '@/components/automata/ConverterPanel'
 import { GrammarEditor } from '@/components/automata/GrammarEditor'
 import { LSystemEditor } from '@/components/automata/LSystemEditor'
 import { RegExEditor } from '@/components/automata/RegExEditor'
@@ -80,6 +81,7 @@ function Index() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [multiTestOpen, setMultiTestOpen] = useState(false)
   const [pumpingOpen, setPumpingOpen] = useState(false)
+  const [converterOpen, setConverterOpen] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
 
   const showConfirm = useCallback((message: string, onConfirm: () => void) => {
@@ -241,6 +243,7 @@ function Index() {
         onToggleAI={() => setAiPanelOpen((v) => !v)}
         onMultiTest={() => setMultiTestOpen(true)}
         onPumpingLemma={() => setPumpingOpen(true)}
+        onConvert={() => setConverterOpen(true)}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
@@ -355,6 +358,15 @@ function Index() {
       <PumpingLemmaPanel
         isOpen={pumpingOpen}
         onClose={() => setPumpingOpen(false)}
+      />
+      <ConverterPanel
+        graph={graph}
+        isOpen={converterOpen}
+        onClose={() => setConverterOpen(false)}
+        onApply={(newGraph) => {
+          handleImport(newGraph)
+          setConverterOpen(false)
+        }}
       />
     </div>
   )
