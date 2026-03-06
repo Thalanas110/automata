@@ -45,6 +45,7 @@ export function AutomataCanvas({
   const svgRef = useRef<SVGSVGElement>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [labelEdit, setLabelEdit] = useState<TransitionLabelEdit | null>(null)
+  const [stateLabelEdit, setStateLabelEdit] = useState<{ stateId: string; tempLabel: string } | null>(null)
   const [hoveredStateId, setHoveredStateId] = useState<string | null>(null)
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 900, h: 560 })
   const [isPanning, setIsPanning] = useState(false)
@@ -489,17 +490,21 @@ export function AutomataCanvas({
     (e: React.MouseEvent, state: State) => {
       e.stopPropagation()
       if (editorState.tool !== 'select') return
-      const newLabel = prompt('State label:', state.label)
-      if (newLabel === null) return
-      onGraphChange({
-        ...graph,
-        states: graph.states.map((s) =>
-          s.id === state.id ? { ...s, label: newLabel } : s,
-        ),
-      })
+      setStateLabelEdit({ stateId: state.id, tempLabel: state.label })
     },
-    [editorState.tool, graph, onGraphChange],
+    [editorState.tool],
   )
+
+  const commitStateLabelEdit = useCallback(() => {
+    if (!stateLabelEdit) return
+    onGraphChange({
+      ...graph,
+      states: graph.states.map((s) =>
+        s.id === stateLabelEdit.stateId ? { ...s, label: stateLabelEdit.tempLabel } : s,
+      ),
+    })
+    setStateLabelEdit(null)
+  }, [graph, stateLabelEdit, onGraphChange])
 
   const commitLabelEdit = useCallback(() => {
     if (!labelEdit) return
@@ -925,6 +930,41 @@ export function AutomataCanvas({
             )
           })()}
       </svg>
+
+      {/* State label edit modal */}
+      {stateLabelEdit && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+          <div className="bg-[#1a1b1e] border border-cyan-500/50 rounded-lg p-4 shadow-2xl min-w-[240px]">
+            <p className="text-xs text-gray-400 mb-2 font-mono">State label:</p>
+            <input
+              autoFocus
+              value={stateLabelEdit.tempLabel}
+              onChange={(e) =>
+                setStateLabelEdit({ ...stateLabelEdit, tempLabel: e.target.value })
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitStateLabelEdit()
+                if (e.key === 'Escape') setStateLabelEdit(null)
+              }}
+              className="w-full text-center text-sm bg-[#0e0f11] text-cyan-300 border border-cyan-500 rounded px-3 py-1.5 outline-none font-mono mb-3"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setStateLabelEdit(null)}
+                className="px-3 py-1 text-xs font-mono text-gray-400 hover:text-white bg-[#0e0f11] border border-[#2d3748] rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={commitStateLabelEdit}
+                className="px-3 py-1 text-xs font-mono text-cyan-300 hover:text-cyan-100 bg-cyan-900/30 border border-cyan-500/50 rounded"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Label edit overlay for new transitions */}
       {labelEdit?.isNew && (
