@@ -68,8 +68,20 @@ export function SimulationBar({
   const isSimulating = simConfig !== null
   const isCanvasType = CANVAS_TYPES.includes(graph.type)
 
+  // Reset simulation whenever the automaton type changes to avoid using
+  // a stale config whose shape doesn't match the current graph type.
+  const prevGraphTypeRef = useRef(graph.type)
+  useEffect(() => {
+    if (prevGraphTypeRef.current !== graph.type) {
+      prevGraphTypeRef.current = graph.type
+      setSimConfig(null)
+      setAutoPlay(false)
+      clearVisualization()
+    }
+  }, [graph.type])
+
   function getActiveIds(config: SimConfig): string[] {
-    if (graph.type === 'NFA') return [...(config as NFAConfig).currentStates]
+    if (graph.type === 'NFA') return [...((config as NFAConfig).currentStates ?? [])]
     return [
       (
         config as
@@ -464,7 +476,7 @@ export function SimulationBar({
           <div className="text-xs font-mono text-gray-500">
             active:{' '}
             <span className="text-cyan-400">
-              {[...(simConfig as NFAConfig).currentStates]
+              {[...((simConfig as NFAConfig).currentStates ?? [])]
                 .map((id) => graph.states.find((s) => s.id === id)?.label ?? id)
                 .join(', ')}
             </span>
