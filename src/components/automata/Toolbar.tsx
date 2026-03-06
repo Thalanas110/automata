@@ -6,6 +6,14 @@ import {
   importFromJFLAP,
   importFromJSON,
 } from '@/lib/automata/jflap'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface ToolbarProps {
   activeTool: EditorTool
@@ -59,6 +67,7 @@ export function Toolbar({
   const menuRef = useRef<HTMLDivElement>(null)
   const isCanvasType = CANVAS_TYPES.includes(graph.type)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false)
 
   // Close menu when clicking outside
   const handleOutsideClick = useCallback((e: MouseEvent) => {
@@ -117,13 +126,29 @@ export function Toolbar({
         imported = importFromJSON(content)
       }
       if (imported) onImport(imported)
-      else alert('Failed to parse file. Supported formats: .json, .jff, .xml')
+      else setErrorDialogOpen(true)
     }
     reader.readAsText(file)
     e.target.value = ''
   }
 
   return (
+    <>
+    <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+      <DialogContent className="bg-[#111214] border border-[#1e2028] text-white">
+        <DialogHeader>
+          <DialogTitle className="text-red-400">Import Failed</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-gray-300">
+          Failed to parse file. Supported formats: <span className="font-mono text-cyan-400">.json</span>, <span className="font-mono text-cyan-400">.jff</span>, <span className="font-mono text-cyan-400">.xml</span>
+        </p>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setErrorDialogOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <div className="bg-[#111214] border-b border-[#1e2028] flex items-center gap-2 px-4 py-2 select-none relative">
       {/* Logo */}
       <div className="flex items-center gap-2 mr-3 shrink-0">
@@ -373,5 +398,6 @@ export function Toolbar({
         onChange={handleImport}
       />
     </div>
+    </>
   )
 }

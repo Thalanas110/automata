@@ -1,5 +1,13 @@
 import { useState, useCallback, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type {
   AutomataGraph,
   EditorState,
@@ -72,6 +80,11 @@ function Index() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [multiTestOpen, setMultiTestOpen] = useState(false)
   const [pumpingOpen, setPumpingOpen] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
+
+  const showConfirm = useCallback((message: string, onConfirm: () => void) => {
+    setConfirmDialog({ message, onConfirm })
+  }, [])
 
   const isCanvasType = CANVAS_TYPES.includes(graph.type)
 
@@ -154,23 +167,22 @@ function Index() {
   }, [editorState.selectedStateId, editorState.selectedTransitionId])
 
   const handleNewMachine = useCallback((type: MachineType) => {
-    if (
-      !window.confirm(
-        `Create a new ${type} machine? This will clear the current canvas.`,
-      )
+    showConfirm(
+      `Create a new ${type} machine? This will clear the current canvas.`,
+      () => {
+        setGraph(createEmptyGraph(type))
+        setEditorState({
+          tool: 'select',
+          selectedStateId: null,
+          selectedTransitionId: null,
+          transitionSource: null,
+        })
+        setActiveStateIds([])
+        setAcceptedStateIds([])
+        setRejectedStateIds([])
+      },
     )
-      return
-    setGraph(createEmptyGraph(type))
-    setEditorState({
-      tool: 'select',
-      selectedStateId: null,
-      selectedTransitionId: null,
-      transitionSource: null,
-    })
-    setActiveStateIds([])
-    setAcceptedStateIds([])
-    setRejectedStateIds([])
-  }, [])
+  }, [showConfirm])
 
   const handleImport = useCallback((imported: AutomataGraph) => {
     setGraph(imported)
@@ -186,12 +198,13 @@ function Index() {
   }, [])
 
   const handleClear = useCallback(() => {
-    if (!window.confirm('Clear the canvas?')) return
-    setGraph((g) => createEmptyGraph(g.type))
-    setActiveStateIds([])
-    setAcceptedStateIds([])
-    setRejectedStateIds([])
-  }, [])
+    showConfirm('Clear the canvas?', () => {
+      setGraph((g) => createEmptyGraph(g.type))
+      setActiveStateIds([])
+      setAcceptedStateIds([])
+      setRejectedStateIds([])
+    })
+  }, [showConfirm])
 
   const handleApplyAIMachine = useCallback((newGraph: AutomataGraph) => {
     setGraph(newGraph)
@@ -311,6 +324,27 @@ function Index() {
           </>
         )}
       </div>
+
+      {/* Confirm dialog */}
+      <Dialog open={!!confirmDialog} onOpenChange={(open) => { if (!open) setConfirmDialog(null) }}>
+        <DialogContent className="bg-[#111214] border border-[#1e2028] text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Confirm</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-300">{confirmDialog?.message}</p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfirmDialog(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-cyan-500 hover:bg-cyan-400 text-black"
+              onClick={() => { confirmDialog?.onConfirm(); setConfirmDialog(null) }}
+            >
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <MultiStringTester
