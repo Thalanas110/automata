@@ -17,6 +17,8 @@ interface ToolbarProps {
   onToggleAI: () => void
   onMultiTest: () => void
   onPumpingLemma: () => void
+  sidebarOpen: boolean
+  onToggleSidebar: () => void
 }
 
 const TOOLS: { id: EditorTool; label: string; icon: string; hint: string }[] = [
@@ -50,6 +52,8 @@ export function Toolbar({
   onToggleAI,
   onMultiTest,
   onPumpingLemma,
+  sidebarOpen,
+  onToggleSidebar,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -137,6 +141,19 @@ export function Toolbar({
       </div>
 
       <div className="h-5 w-px bg-[#2d3748] shrink-0" />
+
+      {/* Sidebar toggle (mobile only) */}
+      <button
+        onClick={onToggleSidebar}
+        title="Toggle sidebar"
+        className={`md:hidden flex items-center justify-center w-7 h-7 rounded text-xs font-mono transition-all ${
+          sidebarOpen
+            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+            : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b1e]'
+        }`}
+      >
+        <span className="text-sm">◧</span>
+      </button>
 
       {/* Edit tools (only for canvas types) */}
       {isCanvasType && (

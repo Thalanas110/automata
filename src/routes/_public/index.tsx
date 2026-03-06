@@ -69,6 +69,7 @@ function Index() {
   const [acceptedStateIds, setAcceptedStateIds] = useState<string[]>([])
   const [rejectedStateIds, setRejectedStateIds] = useState<string[]>([])
   const [aiPanelOpen, setAiPanelOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [multiTestOpen, setMultiTestOpen] = useState(false)
   const [pumpingOpen, setPumpingOpen] = useState(false)
 
@@ -227,18 +228,36 @@ function Index() {
         onToggleAI={() => setAiPanelOpen((v) => !v)}
         onMultiTest={() => setMultiTestOpen(true)}
         onPumpingLemma={() => setPumpingOpen(true)}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
 
       {/* Main layout */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar */}
-        <Sidebar
-          graph={graph}
-          onGraphChange={setGraph}
-          onNewMachine={handleNewMachine}
-          selectedStateId={editorState.selectedStateId}
-          selectedTransitionId={editorState.selectedTransitionId}
-        />
+        {/* Mobile sidebar backdrop */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-20 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar — fixed overlay on mobile, static on md+ */}
+        <div
+          className={`${
+            sidebarOpen
+              ? 'flex fixed left-0 top-[41px] bottom-0 z-30'
+              : 'hidden md:flex'
+          }`}
+        >
+          <Sidebar
+            graph={graph}
+            onGraphChange={setGraph}
+            onNewMachine={handleNewMachine}
+            selectedStateId={editorState.selectedStateId}
+            selectedTransitionId={editorState.selectedTransitionId}
+          />
+        </div>
 
         {/* Main content area */}
         <div className="flex flex-col flex-1 min-w-0">

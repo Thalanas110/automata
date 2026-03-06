@@ -355,12 +355,12 @@ export function SimulationBar({
       )}
 
       {/* Main control bar */}
-      <div className="flex items-center gap-3 px-4 py-2 flex-wrap">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
             Input
           </span>
-          <div className="relative">
+          <div className="relative flex-1 min-w-0">
             <input
               value={inputString}
               onChange={(e) => {
@@ -369,7 +369,7 @@ export function SimulationBar({
               }}
               placeholder="enter string..."
               disabled={isSimulating}
-              className="bg-[#0e0f11] border border-[#2d3748] rounded px-3 py-1 text-sm font-mono text-white outline-none focus:border-cyan-500 w-40 disabled:opacity-50 transition-colors"
+              className="bg-[#0e0f11] border border-[#2d3748] rounded px-3 py-1 text-sm font-mono text-white outline-none focus:border-cyan-500 w-full disabled:opacity-50 transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !isSimulating) handleInit()
               }}

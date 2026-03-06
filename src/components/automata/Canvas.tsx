@@ -55,20 +55,39 @@ export function AutomataCanvas({
     vy: number
   } | null>(null)
 
-  // SVG coordinate helper
-  const toSVGCoords = useCallback(
-    (e: React.MouseEvent) => {
+  // Touch tracking refs
+  const touchStateRef = useRef<{
+    id: number
+    startX: number
+    startY: number
+    moved: boolean
+  } | null>(null)
+  const pinchRef = useRef<{
+    dist: number
+    vw: number
+    vh: number
+  } | null>(null)
+
+  // SVG coordinate helper (from client coords)
+  const clientToSVG = useCallback(
+    (clientX: number, clientY: number) => {
       const svg = svgRef.current
       if (!svg) return { x: 0, y: 0 }
       const rect = svg.getBoundingClientRect()
       const scaleX = viewBox.w / rect.width
       const scaleY = viewBox.h / rect.height
       return {
-        x: (e.clientX - rect.left) * scaleX + viewBox.x,
-        y: (e.clientY - rect.top) * scaleY + viewBox.y,
+        x: (clientX - rect.left) * scaleX + viewBox.x,
+        y: (clientY - rect.top) * scaleY + viewBox.y,
       }
     },
     [viewBox],
+  )
+
+  // SVG coordinate helper
+  const toSVGCoords = useCallback(
+    (e: React.MouseEvent) => clientToSVG(e.clientX, e.clientY),
+    [clientToSVG],
   )
 
   const handleSVGMouseDown = useCallback(
@@ -236,6 +255,212 @@ export function AutomataCanvas({
       return { ...v, w: newW, h: newH }
     })
   }, [])
+
+  // ── Touch handlers ──────────────────────────────────────────────────
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      if (e.touches.length === 2) {
+        e.preventDefault()
+        const t0 = e.touches[0]
+        const t1 = e.touches[1]
+        const dist = Math.hypot(
+          t1.clientX - t0.clientX,
+          t1.clientY - t0.clientY,
+        )
+        pinchRef.current = { dist, vw: viewBox.w, vh: viewBox.h }
+        touchStateRef.current = null
+        setDrag(null)
+        setIsPanning(false)
+        return
+      }
+      if (e.touches.length !== 1) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      const svgCoords = clientToSVG(touch.clientX, touch.clientY)
+
+      touchStateRef.current = {
+        id: touch.identifier,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        moved: false,
+      }
+
+      const hitState = graph.states.find((s) => {
+        const dx = svgCoords.x - s.x
+        const dy = svgCoords.y - s.y
+        return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + 8
+      })
+
+      if (hitState) {
+        if (editorState.tool === 'select') {
+          onEditorStateChange({
+            ...editorState,
+            selectedStateId: hitState.id,
+            selectedTransitionId: null,
+          })
+          setDrag({
+            stateId: hitState.id,
+            offsetX: svgCoords.x - hitState.x,
+            offsetY: svgCoords.y - hitState.y,
+          })
+        }
+        // delete / addTransition handled on touchEnd (tap)
+      } else {
+        // Background touch → pan
+        setIsPanning(true)
+        panStart.current = {
+          mx: touch.clientX,
+          my: touch.clientY,
+          vx: viewBox.x,
+          vy: viewBox.y,
+        }
+      }
+    },
+    [clientToSVG, editorState, graph.states, onEditorStateChange, viewBox],
+  )
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      e.preventDefault()
+
+      if (e.touches.length === 2 && pinchRef.current) {
+        const t0 = e.touches[0]
+        const t1 = e.touches[1]
+        const newDist = Math.hypot(
+          t1.clientX - t0.clientX,
+          t1.clientY - t0.clientY,
+        )
+        const scale = pinchRef.current.dist / newDist
+        setViewBox((v) => ({
+          ...v,
+          w: Math.max(300, Math.min(3000, pinchRef.current!.vw * scale)),
+          h: Math.max(200, Math.min(2000, pinchRef.current!.vh * scale)),
+        }))
+        return
+      }
+
+      if (e.touches.length !== 1) return
+      const touch = e.touches[0]
+
+      if (touchStateRef.current) {
+        const dx = touch.clientX - touchStateRef.current.startX
+        const dy = touch.clientY - touchStateRef.current.startY
+        if (Math.sqrt(dx * dx + dy * dy) > 6) {
+          touchStateRef.current.moved = true
+        }
+      }
+
+      if (isPanning && panStart.current) {
+        const svg = svgRef.current
+        if (!svg) return
+        const rect = svg.getBoundingClientRect()
+        const scaleX = viewBox.w / rect.width
+        const scaleY = viewBox.h / rect.height
+        const { mx, my, vx, vy } = panStart.current
+        setViewBox((v) => ({
+          ...v,
+          x: vx - (touch.clientX - mx) * scaleX,
+          y: vy - (touch.clientY - my) * scaleY,
+        }))
+        return
+      }
+
+      if (drag) {
+        const svgCoords = clientToSVG(touch.clientX, touch.clientY)
+        onGraphChange({
+          ...graph,
+          states: graph.states.map((s) =>
+            s.id === drag.stateId
+              ? { ...s, x: svgCoords.x - drag.offsetX, y: svgCoords.y - drag.offsetY }
+              : s,
+          ),
+        })
+      }
+    },
+    [clientToSVG, drag, graph, isPanning, onGraphChange, viewBox],
+  )
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      e.preventDefault()
+      pinchRef.current = null
+
+      if (e.changedTouches.length === 1 && touchStateRef.current) {
+        const touch = e.changedTouches[0]
+        const wasTap = !touchStateRef.current.moved
+
+        if (wasTap) {
+          const svgCoords = clientToSVG(touch.clientX, touch.clientY)
+          const hitState = graph.states.find((s) => {
+            const dx = svgCoords.x - s.x
+            const dy = svgCoords.y - s.y
+            return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + 8
+          })
+
+          if (hitState) {
+            if (editorState.tool === 'delete') {
+              onGraphChange({
+                ...graph,
+                states: graph.states.filter((s) => s.id !== hitState.id),
+                transitions: graph.transitions.filter(
+                  (t) => t.from !== hitState.id && t.to !== hitState.id,
+                ),
+              })
+              onEditorStateChange({ ...editorState, selectedStateId: null })
+            } else if (editorState.tool === 'addTransition') {
+              if (!editorState.transitionSource) {
+                onEditorStateChange({
+                  ...editorState,
+                  transitionSource: hitState.id,
+                })
+              } else {
+                setLabelEdit({
+                  transitionId: null,
+                  tempLabel: '',
+                  isNew: true,
+                  from: editorState.transitionSource,
+                  to: hitState.id,
+                })
+                onEditorStateChange({
+                  ...editorState,
+                  transitionSource: null,
+                })
+              }
+            }
+          } else {
+            // Background tap
+            if (editorState.tool === 'addState') {
+              const newState: State = {
+                id: crypto.randomUUID(),
+                label: `q${graph.states.length}`,
+                x: svgCoords.x,
+                y: svgCoords.y,
+                isStart: graph.states.length === 0,
+                isAccept: false,
+              }
+              onGraphChange({
+                ...graph,
+                states: [...graph.states, newState],
+              })
+            } else {
+              onEditorStateChange({
+                ...editorState,
+                selectedStateId: null,
+                selectedTransitionId: null,
+                transitionSource: null,
+              })
+            }
+          }
+        }
+      }
+
+      touchStateRef.current = null
+      setDrag(null)
+      setIsPanning(false)
+      panStart.current = null
+    },
+    [clientToSVG, editorState, graph, onEditorStateChange, onGraphChange],
+  )
 
   const handleTransitionClick = useCallback(
     (e: React.MouseEvent, t: Transition) => {
@@ -413,7 +638,11 @@ export function AutomataCanvas({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
+          touchAction: 'none',
           cursor:
             editorState.tool === 'addState'
               ? 'crosshair'
