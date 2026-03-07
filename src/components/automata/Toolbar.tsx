@@ -123,9 +123,9 @@ export function Toolbar({
       const content = evt.target?.result as string
       let imported: AutomataGraph | null = null
       if (file.name.endsWith('.jff') || file.name.endsWith('.xml')) {
-        imported = importFromJFLAP(content)
+        imported = importFromJFLAP(content, file.name)
       } else {
-        imported = importFromJSON(content)
+        imported = importFromJSON(content, file.name)
       }
       if (imported) onImport(imported)
       else setErrorDialogOpen(true)

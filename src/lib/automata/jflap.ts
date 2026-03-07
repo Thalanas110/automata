@@ -96,7 +96,7 @@ ${transitionXml}
 
 // ─── JFLAP XML Import ────────────────────────────────────────────────────────
 
-export function importFromJFLAP(xml: string): AutomataGraph | null {
+export function importFromJFLAP(xml: string, filename?: string): AutomataGraph | null {
   try {
     const parser = new DOMParser()
     const doc = parser.parseFromString(xml, 'application/xml')
@@ -160,9 +160,14 @@ export function importFromJFLAP(xml: string): AutomataGraph | null {
       })
     })
 
+    // Extract name from filename (remove extension) or use default
+    const name = filename 
+      ? filename.replace(/\.(jff|xml)$/i, '').replace(/_/g, ' ')
+      : 'Imported Machine'
+
     return {
       id: crypto.randomUUID(),
-      name: 'Imported Machine',
+      name,
       type: machineType,
       states,
       transitions,
@@ -179,10 +184,16 @@ export function exportToJSON(graph: AutomataGraph): string {
   return JSON.stringify(graph, null, 2)
 }
 
-export function importFromJSON(json: string): AutomataGraph | null {
+export function importFromJSON(json: string, filename?: string): AutomataGraph | null {
   try {
     const parsed = JSON.parse(json) as AutomataGraph
     if (!parsed.states || !parsed.transitions || !parsed.type) return null
+    
+    // Use filename if the imported JSON doesn't have a name
+    if (filename && !parsed.name) {
+      parsed.name = filename.replace(/\.json$/i, '').replace(/_/g, ' ')
+    }
+    
     return parsed
   } catch {
     return null
