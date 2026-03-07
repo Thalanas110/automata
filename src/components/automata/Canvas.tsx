@@ -5,6 +5,36 @@ import type {
   Transition,
   EditorState,
 } from '@/lib/automata/types'
+import {
+  STATE_RADIUS,
+  ACCEPT_RING_OFFSET,
+  STATE_HIT_PADDING,
+  ACCEPTED_STATE_COLORS,
+  REJECTED_STATE_COLORS,
+  ACTIVE_STATE_COLORS,
+  SELECTED_STATE_COLORS,
+  TRANSITION_SOURCE_COLORS,
+  HOVERED_STATE_COLORS,
+  DEFAULT_STATE_COLORS,
+  TRANSITION_COLORS,
+  CANVAS_COLORS,
+  SELF_LOOP_RADIUS,
+  SELF_LOOP_ANGLE_SEPARATION,
+  SELF_LOOP_CONTROL_DISTANCE,
+  SELF_LOOP_LABEL_DISTANCE,
+  TRANSITION_SPREAD,
+  BIDIRECTIONAL_BASE_OFFSET,
+  TRANSITION_LABEL_OFFSET,
+  STRAIGHT_LABEL_OFFSET,
+  INITIAL_VIEWBOX,
+  VIEWBOX_WIDTH_MIN,
+  VIEWBOX_WIDTH_MAX,
+  VIEWBOX_HEIGHT_MIN,
+  VIEWBOX_HEIGHT_MAX,
+  ZOOM_IN_FACTOR,
+  ZOOM_OUT_FACTOR,
+  CLICK_TARGET_PADDING,
+} from './constants/canvas'
 
 interface CanvasProps {
   graph: AutomataGraph
@@ -15,9 +45,6 @@ interface CanvasProps {
   onGraphChange: (graph: AutomataGraph) => void
   onEditorStateChange: (state: EditorState) => void
 }
-
-const STATE_RADIUS = 28
-const ACCEPT_RING_OFFSET = 6
 
 interface DragState {
   stateId: string
@@ -47,7 +74,7 @@ export function AutomataCanvas({
   const [labelEdit, setLabelEdit] = useState<TransitionLabelEdit | null>(null)
   const [stateLabelEdit, setStateLabelEdit] = useState<{ stateId: string; tempLabel: string } | null>(null)
   const [hoveredStateId, setHoveredStateId] = useState<string | null>(null)
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 900, h: 560 })
+  const [viewBox, setViewBox] = useState(INITIAL_VIEWBOX)
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef<{
     mx: number
@@ -249,10 +276,10 @@ export function AutomataCanvas({
 
   const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault()
-    const scale = e.deltaY > 0 ? 1.1 : 0.9
+    const scale = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR
     setViewBox((v) => {
-      const newW = Math.max(300, Math.min(3000, v.w * scale))
-      const newH = Math.max(200, Math.min(2000, v.h * scale))
+      const newW = Math.max(VIEWBOX_WIDTH_MIN, Math.min(VIEWBOX_WIDTH_MAX, v.w * scale))
+      const newH = Math.max(VIEWBOX_HEIGHT_MIN, Math.min(VIEWBOX_HEIGHT_MAX, v.h * scale))
       return { ...v, w: newW, h: newH }
     })
   }, [])
@@ -289,7 +316,7 @@ export function AutomataCanvas({
       const hitState = graph.states.find((s) => {
         const dx = svgCoords.x - s.x
         const dy = svgCoords.y - s.y
-        return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + 8
+        return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + STATE_HIT_PADDING
       })
 
       if (hitState) {
@@ -338,8 +365,8 @@ export function AutomataCanvas({
         const scale = dist / newDist
         setViewBox((v) => ({
           ...v,
-          w: Math.max(300, Math.min(3000, vw * scale)),
-          h: Math.max(200, Math.min(2000, vh * scale)),
+          w: Math.max(VIEWBOX_WIDTH_MIN, Math.min(VIEWBOX_WIDTH_MAX, vw * scale)),
+          h: Math.max(VIEWBOX_HEIGHT_MIN, Math.min(VIEWBOX_HEIGHT_MAX, vh * scale)),
         }))
         return
       }
@@ -399,7 +426,7 @@ export function AutomataCanvas({
           const hitState = graph.states.find((s) => {
             const dx = svgCoords.x - s.x
             const dy = svgCoords.y - s.y
-            return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + 8
+            return Math.sqrt(dx * dx + dy * dy) <= STATE_RADIUS + STATE_HIT_PADDING
           })
 
           if (hitState) {
@@ -542,23 +569,21 @@ export function AutomataCanvas({
       )
       const index = selfLoops.findIndex((other) => other.id === t.id)
       const n = selfLoops.length
-      const r = 24
-      const SEPARATION = Math.PI / 4
-      const angle = -Math.PI / 2 + (index - (n - 1) / 2) * SEPARATION
+      const angle = -Math.PI / 2 + (index - (n - 1) / 2) * SELF_LOOP_ANGLE_SEPARATION
       const outX = Math.cos(angle)
       const outY = Math.sin(angle)
       const perpX = -Math.sin(angle)
       const perpY = Math.cos(angle)
-      const startX = from.x + outX * STATE_RADIUS - perpX * r * 0.8
-      const startY = from.y + outY * STATE_RADIUS - perpY * r * 0.8
-      const c1x = from.x + outX * (STATE_RADIUS + 70) - perpX * r * 2
-      const c1y = from.y + outY * (STATE_RADIUS + 70) - perpY * r * 2
-      const c2x = from.x + outX * (STATE_RADIUS + 70) + perpX * r * 2
-      const c2y = from.y + outY * (STATE_RADIUS + 70) + perpY * r * 2
-      const endX = from.x + outX * STATE_RADIUS + perpX * r * 0.8
-      const endY = from.y + outY * STATE_RADIUS + perpY * r * 0.8
-      const labelX = from.x + outX * (STATE_RADIUS + 50)
-      const labelY = from.y + outY * (STATE_RADIUS + 50)
+      const startX = from.x + outX * STATE_RADIUS - perpX * SELF_LOOP_RADIUS * 0.8
+      const startY = from.y + outY * STATE_RADIUS - perpY * SELF_LOOP_RADIUS * 0.8
+      const c1x = from.x + outX * (STATE_RADIUS + SELF_LOOP_CONTROL_DISTANCE) - perpX * SELF_LOOP_RADIUS * 2
+      const c1y = from.y + outY * (STATE_RADIUS + SELF_LOOP_CONTROL_DISTANCE) - perpY * SELF_LOOP_RADIUS * 2
+      const c2x = from.x + outX * (STATE_RADIUS + SELF_LOOP_CONTROL_DISTANCE) + perpX * SELF_LOOP_RADIUS * 2
+      const c2y = from.y + outY * (STATE_RADIUS + SELF_LOOP_CONTROL_DISTANCE) + perpY * SELF_LOOP_RADIUS * 2
+      const endX = from.x + outX * STATE_RADIUS + perpX * SELF_LOOP_RADIUS * 0.8
+      const endY = from.y + outY * STATE_RADIUS + perpY * SELF_LOOP_RADIUS * 0.8
+      const labelX = from.x + outX * (STATE_RADIUS + SELF_LOOP_LABEL_DISTANCE)
+      const labelY = from.y + outY * (STATE_RADIUS + SELF_LOOP_LABEL_DISTANCE)
       return {
         d: `M ${startX} ${startY} C ${c1x} ${c1y} ${c2x} ${c2y} ${endX} ${endY}`,
         labelX,
@@ -596,15 +621,14 @@ export function AutomataCanvas({
 
     // Base offset: push all transitions to one side if bidirectional,
     // then spread each co-directional transition evenly around that base.
-    const SPREAD = 22
-    const baseOffset = hasReverse ? 28 : 0
-    const offset = baseOffset + (coIndex - (coCount - 1) / 2) * SPREAD
+    const baseOffset = hasReverse ? BIDIRECTIONAL_BASE_OFFSET : 0
+    const offset = baseOffset + (coIndex - (coCount - 1) / 2) * TRANSITION_SPREAD
 
     if (offset === 0) {
       return {
         d: `M ${startX} ${startY} L ${endX} ${endY}`,
-        labelX: (startX + endX) / 2 + nx * 14,
-        labelY: (startY + endY) / 2 + ny * 14,
+        labelX: (startX + endX) / 2 + nx * STRAIGHT_LABEL_OFFSET,
+        labelY: (startY + endY) / 2 + ny * STRAIGHT_LABEL_OFFSET,
         isSelfLoop: false,
       }
     }
@@ -615,30 +639,30 @@ export function AutomataCanvas({
     const qcy = midY + ny * offset
     return {
       d: `M ${startX} ${startY} Q ${qcx} ${qcy} ${endX} ${endY}`,
-      labelX: midX + nx * (offset + 12),
-      labelY: midY + ny * (offset + 12),
+      labelX: midX + nx * (offset + TRANSITION_LABEL_OFFSET),
+      labelY: midY + ny * (offset + TRANSITION_LABEL_OFFSET),
       isSelfLoop: false,
     }
   }
 
   function getStateColor(state: State) {
     if (acceptedStateIds.includes(state.id))
-      return { fill: '#00e676', stroke: '#00e676', text: '#000' }
+      return ACCEPTED_STATE_COLORS
     if (rejectedStateIds.includes(state.id))
-      return { fill: '#ff1744', stroke: '#ff1744', text: '#fff' }
+      return REJECTED_STATE_COLORS
     if (activeStateIds.includes(state.id))
-      return { fill: '#00d4ff', stroke: '#00d4ff', text: '#000' }
+      return ACTIVE_STATE_COLORS
     if (editorState.selectedStateId === state.id)
-      return { fill: '#1e2430', stroke: '#00d4ff', text: '#00d4ff' }
+      return SELECTED_STATE_COLORS
     if (editorState.transitionSource === state.id)
-      return { fill: '#1e2430', stroke: '#ffb347', text: '#ffb347' }
+      return TRANSITION_SOURCE_COLORS
     if (hoveredStateId === state.id)
-      return { fill: '#1e2430', stroke: '#6b7280', text: '#e5e7eb' }
-    return { fill: '#141519', stroke: '#374151', text: '#d1d5db' }
+      return HOVERED_STATE_COLORS
+    return DEFAULT_STATE_COLORS
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#0a0b0d]">
+    <div className="relative w-full h-full overflow-hidden" style={{ backgroundColor: CANVAS_COLORS.background }}>
       {/* Grid background */}
       <svg
         className="absolute inset-0 opacity-20 pointer-events-none"
@@ -655,7 +679,7 @@ export function AutomataCanvas({
             <path
               d="M 40 0 L 0 0 0 40"
               fill="none"
-              stroke="#374151"
+              stroke={CANVAS_COLORS.gridStroke}
               strokeWidth="0.5"
             />
           </pattern>
@@ -740,10 +764,10 @@ export function AutomataCanvas({
 
         {/* Transparent bg for click target */}
         <rect
-          x={viewBox.x - 1000}
-          y={viewBox.y - 1000}
-          width={viewBox.w + 2000}
-          height={viewBox.h + 2000}
+          x={viewBox.x - CLICK_TARGET_PADDING}
+          y={viewBox.y - CLICK_TARGET_PADDING}
+          width={viewBox.w + CLICK_TARGET_PADDING * 2}
+          height={viewBox.h + CLICK_TARGET_PADDING * 2}
           fill="transparent"
         />
 
@@ -752,7 +776,7 @@ export function AutomataCanvas({
           const path = getTransitionPath(t)
           if (!path) return null
           const isSelected = editorState.selectedTransitionId === t.id
-          const stroke = isSelected ? '#ffb347' : '#4b5563'
+          const stroke = isSelected ? TRANSITION_COLORS.selected : TRANSITION_COLORS.default
           const marker = isSelected
             ? 'url(#arrowhead-selected)'
             : 'url(#arrowhead)'
@@ -804,7 +828,7 @@ export function AutomataCanvas({
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize={11}
-                  fill={isSelected ? '#ffb347' : '#9ca3af'}
+                  fill={isSelected ? TRANSITION_COLORS.labelSelected : TRANSITION_COLORS.label}
                   fontFamily="'IBM Plex Mono', monospace"
                   className="select-none pointer-events-none"
                 >
@@ -837,7 +861,7 @@ export function AutomataCanvas({
               {/* Glow effect for active states */}
               {isActive && (
                 <circle
-                  r={STATE_RADIUS + 8}
+                  r={STATE_RADIUS + STATE_HIT_PADDING}
                   fill={colors.stroke}
                   opacity={0.15}
                   filter="url(#glow-strong)"
@@ -1005,7 +1029,7 @@ export function AutomataCanvas({
       <div className="absolute bottom-4 right-4 flex flex-col gap-1">
         <button
           onClick={() =>
-            setViewBox((v) => ({ ...v, w: v.w * 0.85, h: v.h * 0.85 }))
+            setViewBox((v) => ({ ...v, w: v.w * ZOOM_IN_FACTOR, h: v.h * ZOOM_IN_FACTOR }))
           }
           className="w-8 h-8 bg-[#1a1b1e] border border-[#2d3748] text-gray-400 hover:text-white text-lg flex items-center justify-center rounded"
         >
@@ -1013,14 +1037,14 @@ export function AutomataCanvas({
         </button>
         <button
           onClick={() =>
-            setViewBox((v) => ({ ...v, w: v.w * 1.15, h: v.h * 1.15 }))
+            setViewBox((v) => ({ ...v, w: v.w * ZOOM_OUT_FACTOR, h: v.h * ZOOM_OUT_FACTOR }))
           }
           className="w-8 h-8 bg-[#1a1b1e] border border-[#2d3748] text-gray-400 hover:text-white text-lg flex items-center justify-center rounded"
         >
           −
         </button>
         <button
-          onClick={() => setViewBox({ x: 0, y: 0, w: 900, h: 560 })}
+          onClick={() => setViewBox(INITIAL_VIEWBOX)}
           className="w-8 h-8 bg-[#1a1b1e] border border-[#2d3748] text-gray-400 hover:text-white text-xs flex items-center justify-center rounded font-mono"
         >
           ↺

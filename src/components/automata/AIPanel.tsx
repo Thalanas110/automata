@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { AIMessage, AutomataGraph } from '@/lib/automata/types'
 import { groqChatFn } from '@/server/functions/groq'
+import { QUICK_PROMPTS } from '@/components/automata/constants/aisidebar/aipanel'
 
 interface AIPanelProps {
   graph: AutomataGraph
@@ -8,14 +9,6 @@ interface AIPanelProps {
   onClose?: () => void
 }
 
-const QUICK_PROMPTS = [
-  'DFA that accepts strings with even number of 0s',
-  'NFA for strings ending in "ab"',
-  'PDA for balanced parentheses',
-  'TM that copies a string',
-  'Explain this machine',
-  'Find missing transitions',
-]
 
 export function AIPanel({ graph, onApplyMachine, onClose }: AIPanelProps) {
   const [messages, setMessages] = useState<AIMessage[]>([
@@ -211,11 +204,10 @@ export function AIPanel({ graph, onApplyMachine, onClose }: AIPanelProps) {
             className={`${msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}
           >
             <div
-              className={`max-w-[90%] rounded-lg px-3 py-2 text-xs font-mono leading-relaxed ${
-                msg.role === 'user'
+              className={`max-w-[90%] rounded-lg px-3 py-2 text-xs font-mono leading-relaxed ${msg.role === 'user'
                   ? 'bg-cyan-500/20 text-cyan-100 border border-cyan-500/30'
                   : 'bg-[#1a1b1e] text-gray-300 border border-[#2d3748]'
-              }`}
+                }`}
             >
               {msg.role === 'assistant' ? (
                 <div className="space-y-0.5">{renderContent(msg.content)}</div>
