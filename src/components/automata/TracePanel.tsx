@@ -15,6 +15,15 @@ import type {
   MooreStep,
   MultiTMStep,
 } from '@/lib/automata/types'
+import {
+  resultColor,
+  rowClass,
+  Th,
+  Td,
+  Sym,
+  InputStr,
+  DirBadge,
+} from './constants/tracepanel'
 
 type SimConfig =
   | DFAConfig
@@ -66,12 +75,7 @@ export function TracePanel({
         ? 'halted'
         : 'incomplete'
 
-  const resultColor = {
-    accepted: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
-    rejected: 'text-red-400 border-red-500/40 bg-red-500/10',
-    halted: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
-    incomplete: 'text-gray-400 border-gray-500/40 bg-gray-500/10',
-  }[result]
+  const resultColorClass = resultColor[result]
 
   const history = simConfig.history as unknown[]
 
@@ -403,7 +407,7 @@ export function TracePanel({
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest border ${resultColor}`}
+              className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest border ${resultColorClass}`}
             >
               {result === 'accepted' && '✓ ACCEPTED'}
               {result === 'rejected' && '✗ REJECTED'}
@@ -462,66 +466,4 @@ export function TracePanel({
   )
 }
 
-// ─── Small helpers ────────────────────────────────────────────────────────────
 
-function rowClass(i: number) {
-  return `border-b border-[#1a1b1e] transition-colors ${
-    i % 2 === 0 ? 'bg-[#0e0f11]/60' : 'bg-transparent'
-  } hover:bg-cyan-500/5`
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="text-left px-3 py-2 text-[9px] font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
-      {children}
-    </th>
-  )
-}
-
-function Td({
-  children,
-  dim,
-}: {
-  children: React.ReactNode
-  dim?: boolean
-}) {
-  return (
-    <td
-      className={`px-3 py-1.5 text-xs font-mono whitespace-nowrap ${dim ? 'text-gray-600' : 'text-gray-300'}`}
-    >
-      {children}
-    </td>
-  )
-}
-
-function Sym({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-cyan-300 bg-cyan-400/10 px-1 rounded text-[11px]">
-      {children}
-    </span>
-  )
-}
-
-function InputStr({ value }: { value: string }) {
-  if (!value) return <span className="text-gray-600 italic">ε</span>
-  return (
-    <span>
-      <span className="text-emerald-300 font-bold">{value[0]}</span>
-      <span className="text-gray-500">{value.slice(1)}</span>
-    </span>
-  )
-}
-
-function DirBadge({ dir }: { dir: 'L' | 'R' | 'S' }) {
-  const color =
-    dir === 'R'
-      ? 'text-cyan-300 bg-cyan-400/10'
-      : dir === 'L'
-        ? 'text-violet-300 bg-violet-400/10'
-        : 'text-gray-400 bg-gray-400/10'
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${color}`}>
-      {dir}
-    </span>
-  )
-}

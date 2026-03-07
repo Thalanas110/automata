@@ -1,28 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
-import type {
-  AutomataGraph,
-  DFAConfig,
-  NFAConfig,
-  PDAConfig,
-  TMConfig,
-  MealyConfig,
-  MooreConfig,
-  MultiTMConfig,
-  DFAStep,
-  NFAStep,
-  PDAStep,
-  TMStep,
-} from '@/lib/automata/types'
+import type { AutomataGraph, TMConfig } from '@/lib/automata/types'
 import { AutomataCanvas } from './Canvas'
-
-type SimConfig =
-  | DFAConfig
-  | NFAConfig
-  | PDAConfig
-  | TMConfig
-  | MealyConfig
-  | MooreConfig
-  | MultiTMConfig
+import {
+  type SimConfig,
+  resultColorMap,
+  sliderStyles,
+  getActiveStates,
+  getStepDetails,
+} from './constants/visualtracepanel'
 
 interface VisualTracePanelProps {
   graph: AutomataGraph
@@ -71,159 +56,12 @@ export function VisualTracePanel({
 
   // Calculate which states should be highlighted at the current step
   const { activeStateIds, acceptedStateIds, rejectedStateIds } = useMemo(() => {
-    if (!history[currentStep]) {
-      return { activeStateIds: [], acceptedStateIds: [], rejectedStateIds: [] }
-    }
-
-    const step = history[currentStep]
-    let activeIds: string[] = []
-    let acceptedIds: string[] = []
-    let rejectedIds: string[] = []
-
-    // Check if this is the final step
-    const isFinalStep = currentStep === totalSteps - 1
-
-    switch (graph.type) {
-      case 'DFA': {
-        const dfaStep = step as DFAStep
-        if (isFinalStep) {
-          if (simConfig.accepted) {
-            acceptedIds = [dfaStep.nextState].filter((s) => s !== null) as string[]
-          } else if (simConfig.rejected) {
-            rejectedIds = [dfaStep.nextState].filter((s) => s !== null) as string[]
-          } else {
-            activeIds = [dfaStep.nextState].filter((s) => s !== null) as string[]
-          }
-        } else {
-          activeIds = [dfaStep.state].filter((s) => s !== null) as string[]
-        }
-        break
-      }
-      case 'NFA': {
-        const nfaStep = step as NFAStep
-        if (isFinalStep) {
-          if (simConfig.accepted) {
-            acceptedIds = [...nfaStep.nextStates]
-          } else if (simConfig.rejected) {
-            rejectedIds = [...nfaStep.nextStates]
-          } else {
-            activeIds = [...nfaStep.nextStates]
-          }
-        } else {
-          activeIds = [...nfaStep.states]
-        }
-        break
-      }
-      case 'PDA': {
-        const pdaStep = step as PDAStep
-        if (isFinalStep) {
-          const nextState = pdaStep.nextState
-          if (nextState === null) {
-            rejectedIds = []
-          } else if (simConfig.accepted) {
-            acceptedIds = [nextState]
-          } else if (simConfig.rejected) {
-            rejectedIds = [nextState]
-          } else {
-            activeIds = [nextState]
-          }
-        } else {
-          activeIds = pdaStep.state ? [pdaStep.state] : []
-        }
-        break
-      }
-      case 'TM':
-      case 'Mealy':
-      case 'Moore': {
-        const tmStep = step as TMStep
-        if (isFinalStep) {
-          const state = tmStep.nextState
-          if (state === null) {
-            rejectedIds = []
-          } else if (simConfig.accepted) {
-            acceptedIds = [state]
-          } else if (simConfig.rejected) {
-            rejectedIds = [state]
-          } else {
-            activeIds = [state]
-          }
-        } else {
-          activeIds = tmStep.state !== null ? [tmStep.state] : []
-        }
-        break
-      }
-      case 'MultiTM': {
-        const tmStep = step as TMStep
-        if (isFinalStep) {
-          const state = tmStep.nextState
-          if (state === null) {
-            rejectedIds = []
-          } else if (simConfig.accepted) {
-            acceptedIds = [state]
-          } else if (simConfig.rejected) {
-            rejectedIds = [state]
-          } else {
-            activeIds = [state]
-          }
-        } else {
-          activeIds = tmStep.state !== null ? [tmStep.state] : []
-        }
-        break
-      }
-    }
-
-    return { activeStateIds: activeIds, acceptedStateIds: acceptedIds, rejectedStateIds: rejectedIds }
+    return getActiveStates(history, currentStep, totalSteps, graph.type, simConfig)
   }, [currentStep, history, graph.type, simConfig, totalSteps])
 
   // Get current step details for display
   const stepDetails = useMemo(() => {
-    if (!history[currentStep]) return null
-
-    const step = history[currentStep]
-
-    switch (graph.type) {
-      case 'DFA': {
-        const dfaStep = step as DFAStep
-        return {
-          input: dfaStep.input,
-          symbol: dfaStep.symbol,
-          state: graph.states.find((s) => s.id === dfaStep.state)?.label || dfaStep.state,
-        }
-      }
-      case 'NFA': {
-        const nfaStep = step as NFAStep
-        return {
-          input: nfaStep.input,
-          symbol: nfaStep.symbol,
-          states: nfaStep.states
-            .map((id) => graph.states.find((s) => s.id === id)?.label || id)
-            .join(', '),
-        }
-      }
-      case 'PDA': {
-        const pdaStep = step as PDAStep
-        return {
-          input: pdaStep.input,
-          symbol: pdaStep.symbol,
-          state: graph.states.find((s) => s.id === pdaStep.state)?.label || pdaStep.state,
-          stackTop: pdaStep.stackTop || 'ε',
-        }
-      }
-      case 'TM':
-      case 'Mealy':
-      case 'Moore':
-      case 'MultiTM': {
-        const tmStep = step as TMStep
-        return {
-          state: graph.states.find((s) => s.id === tmStep.state)?.label || tmStep.state,
-          read: tmStep.read,
-          write: tmStep.write,
-          direction: tmStep.direction,
-        }
-      }
-      default:
-        return null
-    }
+    return getStepDetails(history, currentStep, graph)
   }, [currentStep, history, graph])
 
   const result = simConfig.accepted
@@ -234,12 +72,7 @@ export function VisualTracePanel({
         ? 'halted'
         : 'incomplete'
 
-  const resultColor = {
-    accepted: 'text-emerald-400',
-    rejected: 'text-red-400',
-    halted: 'text-amber-400',
-    incomplete: 'text-gray-400',
-  }[result]
+  const resultColor = resultColorMap[result]
 
   if (!isOpen) return null
 
@@ -477,24 +310,7 @@ export function VisualTracePanel({
         )}
       </div>
 
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #22d3ee;
-          cursor: pointer;
-        }
-        .slider::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #22d3ee;
-          cursor: pointer;
-          border: none;
-        }
-      `}</style>
+      <style>{sliderStyles}</style>
     </div>
   )
 }
