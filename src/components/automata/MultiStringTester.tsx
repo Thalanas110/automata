@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import type { AutomataGraph, MultiStringResult } from '@/lib/automata/types'
 import { runMultipleStrings } from '@/lib/automata/simulator'
 import { TracePanel } from './TracePanel'
+import { VisualTracePanel } from './VisualTracePanel'
 
 interface MultiStringTesterProps {
   graph: AutomataGraph
@@ -20,6 +21,7 @@ export function MultiStringTester({
   const [filter, setFilter] = useState<'all' | 'accepted' | 'rejected'>('all')
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [traceOpen, setTraceOpen] = useState(false)
+  const [visualTraceOpen, setVisualTraceOpen] = useState(false)
 
   const handleRun = useCallback(() => {
     const lines = inputText
@@ -32,6 +34,7 @@ export function MultiStringTester({
     setRan(true)
     setSelectedIdx(null)
     setTraceOpen(false)
+    setVisualTraceOpen(false)
   }, [inputText, graph])
 
   const handleClear = () => {
@@ -40,6 +43,7 @@ export function MultiStringTester({
     setRan(false)
     setSelectedIdx(null)
     setTraceOpen(false)
+    setVisualTraceOpen(false)
   }
 
   const filtered = results.filter((r) => {
@@ -166,12 +170,20 @@ export function MultiStringTester({
                     / {results.length} total
                   </span>
                   {selectedIdx !== null && (
-                    <button
-                      onClick={() => setTraceOpen(true)}
-                      className="px-2.5 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 transition-colors whitespace-nowrap"
-                    >
-                      ⋯ Traceback
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setVisualTraceOpen(true)}
+                        className="px-2.5 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded hover:bg-cyan-500/30 transition-colors whitespace-nowrap"
+                      >
+                        👁 Visual Trace
+                      </button>
+                      <button
+                        onClick={() => setTraceOpen(true)}
+                        className="px-2.5 py-0.5 text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded hover:bg-purple-500/30 transition-colors whitespace-nowrap"
+                      >
+                        ⋯ Traceback
+                      </button>
+                    </>
                   )}
                 </div>
 
@@ -265,7 +277,7 @@ export function MultiStringTester({
             {/* Hint */}
             {ran && results.length > 0 && selectedIdx === null && (
               <div className="text-[9px] font-mono text-gray-600 text-center pt-1">
-                click a row to select · then use Traceback
+                click a row to select · then use Visual Trace or Traceback
               </div>
             )}
 
@@ -299,6 +311,16 @@ export function MultiStringTester({
           </div>
         </div>
       </div>
+
+      {/* Visual Trace panel — rendered outside the modal so it can stack on top */}
+      {visualTraceOpen && selectedIdx !== null && results[selectedIdx]?.simConfig && (
+        <VisualTracePanel
+          graph={graph}
+          simConfig={results[selectedIdx].simConfig!}
+          isOpen={visualTraceOpen}
+          onClose={() => setVisualTraceOpen(false)}
+        />
+      )}
 
       {/* Traceback panel — rendered outside the modal so it can stack on top */}
       {traceOpen && selectedIdx !== null && results[selectedIdx]?.simConfig && (
