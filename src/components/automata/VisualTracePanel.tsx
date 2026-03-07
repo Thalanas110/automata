@@ -273,7 +273,7 @@ export function VisualTracePanel({
             <AutomataCanvas
               graph={graph}
               editorState={{
-                tool: 'select',
+                tool: 'pan',
                 selectedStateId: null,
                 selectedTransitionId: null,
                 transitionSource: null,
@@ -445,7 +445,7 @@ export function VisualTracePanel({
             </div>
 
             <span className="text-xs font-mono text-gray-600">
-              Use ← → arrow keys
+              Use ← → arrow keys · Drag to pan · Scroll to zoom
             </span>
           </div>
         </div>
