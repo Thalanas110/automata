@@ -765,3 +765,216 @@ export function dfaToRegex(dfa: AutomataGraph): { regex: string } {
   // DFA is a special case of NFA, so use the same algorithm
   return nfaToRegex(dfa)
 }
+
+// ─── DFA → Minimized DFA via Hopcroft's Algorithm ─────────────────────────────
+
+export interface PartitionRow {
+  /** Label for this equivalence class, e.g. "P0" */
+  classLabel: string
+  /** Original DFA state IDs in this class */
+  stateIds: string[]
+  /** Original DFA state labels in this class */
+  stateLabels: string[]
+  isStart: boolean
+  isAccept: boolean
+  /** symbol → target class label */
+  transitions: Record<string, string>
+}
+
+export interface MinimizeDFAResult {
+  minDFA: AutomataGraph
+  table: PartitionRow[]
+}
+
+/**
+ * Minimize a DFA using Hopcroft's partition-refinement algorithm.
+ * Steps:
+ *   1. Remove unreachable states.
+ *   2. Initial partition: {accept states} vs {non-accept states}.
+ *   3. Iteratively split any partition group where states disagree on
+ *      which group they transition to for some symbol.
+ *   4. Build the minimized DFA (one state per partition class).
+ */
+export function minimizeDFA(dfa: AutomataGraph): MinimizeDFAResult {
+  const { alphabet } = dfa
+
+  const startState = dfa.states.find((s) => s.isStart)
+  if (!startState || dfa.states.length === 0) {
+    return {
+      minDFA: {
+        ...dfa,
+        id: crypto.randomUUID(),
+        name: dfa.name + ' (Min)',
+      },
+      table: [],
+    }
+  }
+
+  // Step 1: Collect reachable state IDs via BFS
+  const reachable = new Set<string>()
+  const bfsQueue: string[] = [startState.id]
+  reachable.add(startState.id)
+  while (bfsQueue.length > 0) {
+    const cur = bfsQueue.shift()!
+    for (const t of dfa.transitions) {
+      if (t.from === cur && !reachable.has(t.to)) {
+        reachable.add(t.to)
+        bfsQueue.push(t.to)
+      }
+    }
+  }
+
+  const states = dfa.states.filter((s) => reachable.has(s.id))
+  const transitions = dfa.transitions.filter(
+    (t) => reachable.has(t.from) && reachable.has(t.to),
+  )
+
+  // Build a fast transition lookup: stateId → symbol → targetId
+  const transMap = new Map<string, Map<string, string>>()
+  for (const s of states) transMap.set(s.id, new Map())
+  for (const t of transitions) {
+    const labels = t.label.split(',').map((l) => l.trim())
+    for (const sym of labels) {
+      transMap.get(t.from)?.set(sym, t.to)
+    }
+  }
+
+  // Step 2: Initial partition
+  const acceptIds = new Set(states.filter((s) => s.isAccept).map((s) => s.id))
+  const nonAcceptIds = states.filter((s) => !s.isAccept).map((s) => s.id)
+  const acceptGroup = states.filter((s) => s.isAccept).map((s) => s.id)
+
+  const partitions: string[][] = []
+  if (acceptGroup.length > 0) partitions.push(acceptGroup)
+  if (nonAcceptIds.length > 0) partitions.push(nonAcceptIds)
+  if (partitions.length === 0) partitions.push(states.map((s) => s.id))
+
+  // Helper: find which partition index a state belongs to
+  function partitionOf(stateId: string, parts: string[][]): number {
+    return parts.findIndex((p) => p.includes(stateId))
+  }
+
+  // Step 3: Iterative refinement
+  let changed = true
+  while (changed) {
+    changed = false
+    const next: string[][] = []
+    for (const group of partitions) {
+      if (group.length <= 1) {
+        next.push(group)
+        continue
+      }
+      // Compute a signature for each state in the group
+      // Signature = tuple of (partitionIndex of target for each symbol)
+      const signatureOf = (id: string): string =>
+        alphabet
+          .map((sym) => {
+            const target = transMap.get(id)?.get(sym)
+            if (target === undefined) return '-1'
+            return String(partitionOf(target, partitions))
+          })
+          .join('|')
+
+      const sigMap = new Map<string, string[]>()
+      for (const id of group) {
+        const sig = signatureOf(id)
+        if (!sigMap.has(sig)) sigMap.set(sig, [])
+        sigMap.get(sig)!.push(id)
+      }
+
+      if (sigMap.size > 1) changed = true
+      for (const subGroup of sigMap.values()) next.push(subGroup)
+    }
+    partitions.length = 0
+    for (const g of next) partitions.push(g)
+  }
+
+  // Stable partitions obtained — assign class labels
+  // Put the partition containing the start state first
+  const startPartIdx = partitions.findIndex((p) => p.includes(startState.id))
+  if (startPartIdx > 0) {
+    const [sp] = partitions.splice(startPartIdx, 1)
+    partitions.unshift(sp)
+  }
+
+  // Step 4: Build minimized DFA and partition table
+  const classLabels = partitions.map((_, i) => `P${i}`)
+
+  function classOf(stateId: string): string {
+    const idx = partitions.findIndex((p) => p.includes(stateId))
+    return idx >= 0 ? classLabels[idx] : '∅'
+  }
+
+  const table: PartitionRow[] = partitions.map((group, i) => {
+    const representative = group[0]
+    const rowIsStart = group.includes(startState.id)
+    const rowIsAccept = group.some((id) => acceptIds.has(id))
+    const rowTransitions: Record<string, string> = {}
+    for (const sym of alphabet) {
+      const target = transMap.get(representative)?.get(sym)
+      rowTransitions[sym] = target ? classOf(target) : '∅'
+    }
+    return {
+      classLabel: classLabels[i],
+      stateIds: group,
+      stateLabels: group.map(
+        (id) => dfa.states.find((s) => s.id === id)?.label ?? id,
+      ),
+      isStart: rowIsStart,
+      isAccept: rowIsAccept,
+      transitions: rowTransitions,
+    }
+  })
+
+  // Build AutomataGraph for minimized DFA
+  const totalMin = partitions.length
+  const cols = Math.max(1, Math.ceil(Math.sqrt(totalMin)))
+
+  const minStates: State[] = partitions.map((group, i) => {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    const rowIsStart = group.includes(startState.id)
+    const rowIsAccept = group.some((id) => acceptIds.has(id))
+    // Use joined original labels as display label
+    const label = group
+      .map((id) => dfa.states.find((s) => s.id === id)?.label ?? id)
+      .join(',')
+    return {
+      id: `min_${i}`,
+      label,
+      x: 160 + col * 220,
+      y: 120 + row * 180,
+      isStart: rowIsStart,
+      isAccept: rowIsAccept,
+    }
+  })
+
+  let tIdx = 0
+  const minTransitions: Transition[] = []
+  for (let i = 0; i < partitions.length; i++) {
+    const representative = partitions[i][0]
+    for (const sym of alphabet) {
+      const target = transMap.get(representative)?.get(sym)
+      if (target === undefined) continue
+      const toClass = partitions.findIndex((p) => p.includes(target))
+      if (toClass < 0) continue
+      minTransitions.push({
+        id: `min_t${tIdx++}`,
+        from: `min_${i}`,
+        to: `min_${toClass}`,
+        label: sym,
+      })
+    }
+  }
+
+  const minDFA: AutomataGraph = {
+    id: crypto.randomUUID(),
+    name: dfa.name + ' (Min)',
+    type: 'DFA',
+    states: minStates,
+    transitions: minTransitions,
+    alphabet,
+  }
+
+  return { minDFA, table }
+}

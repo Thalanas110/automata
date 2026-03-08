@@ -6,6 +6,7 @@ import {
   regexToNFA,
   nfaToRegex,
   dfaToRegex,
+  minimizeDFA,
 } from '@/lib/automata/converter'
 import type { SubsetTableRow } from '@/lib/automata/converter'
 import { useNFA } from './lessons/use-nfa'
@@ -15,6 +16,7 @@ import { RegexToNFAView } from './lessons/converter/regex-to-nfa-view'
 import { RegexToDFAView } from './lessons/converter/regex-to-dfa-view'
 import { NFAToRegexView } from './lessons/converter/nfa-to-regex-view'
 import { DFAToRegexView } from './lessons/converter/dfa-to-regex-view'
+import { DFAToMinDFAView } from './lessons/converter/dfa-to-min-dfa-view'
 
 interface ConverterPanelProps {
   graph: AutomataGraph
@@ -30,6 +32,7 @@ type ConversionMode =
   | 'nfa-to-regex'
   | 'dfa-to-regex'
   | 'regex-to-dfa'
+  | 'dfa-to-min-dfa'
 
 export function ConverterPanel({
   graph,
@@ -116,6 +119,17 @@ export function ConverterPanel({
     }
   }, [mode, graph, regexPattern, isRegEx])
 
+  const minimizeDFAResult = useMemo(() => {
+    if (mode !== 'dfa-to-min-dfa') return null
+    if (graph.type !== 'DFA') return null
+    try {
+      return minimizeDFA(graph)
+    } catch (e) {
+      console.error('DFA minimization error:', e)
+      return null
+    }
+  }, [mode, graph])
+
   if (!isOpen) return null
 
   const canConvertNFAtoDFA =
@@ -130,6 +144,7 @@ export function ConverterPanel({
   const canConvertNFAToRegex = graph.type === 'NFA' || isNFA
   const canConvertDFAToRegex = graph.type === 'DFA'
   const canConvertRegexToDFA = graph.type === 'RegEx' || true
+  const canConvertDFAToMinDFA = graph.type === 'DFA'
 
   function handleApply() {
     if (mode === 'nfa-to-dfa' && nfaResult) {
@@ -164,6 +179,8 @@ export function ConverterPanel({
       onApply(regexGraph)
     } else if (mode === 'regex-to-dfa' && regexToDFAResult) {
       onApply(regexToDFAResult.dfa)
+    } else if (mode === 'dfa-to-min-dfa' && minimizeDFAResult) {
+      onApply(minimizeDFAResult.minDFA)
     }
     onClose()
   }
@@ -271,6 +288,18 @@ export function ConverterPanel({
           >
             DFA → RegEx
           </button>
+          <button
+            type="button"
+            disabled={!canConvertDFAToMinDFA}
+            onClick={() => setMode('dfa-to-min-dfa')}
+            className={`px-3 py-1.5 text-xs font-mono rounded-t border-b-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+              mode === 'dfa-to-min-dfa'
+                ? 'border-yellow-400 text-yellow-300 bg-yellow-500/10'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-[#1a1b1e]'
+            }`}
+          >
+            DFA → Min-DFA
+          </button>
         </div>
 
         {/* Body */}
@@ -301,6 +330,9 @@ export function ConverterPanel({
           {mode === 'dfa-to-regex' && (
             <DFAToRegexView graph={graph} result={dfaToRegexResult} />
           )}
+          {mode === 'dfa-to-min-dfa' && (
+            <DFAToMinDFAView graph={graph} result={minimizeDFAResult} />
+          )}
         </div>
 
         {/* Footer */}
@@ -317,6 +349,8 @@ export function ConverterPanel({
               'State elimination: converts NFA to equivalent regex.'}
             {mode === 'dfa-to-regex' &&
               'State elimination: converts DFA to equivalent regex.'}
+            {mode === 'dfa-to-min-dfa' &&
+              "Hopcroft's algorithm: minimizes DFA by merging equivalent states."}
           </p>
           <div className="flex gap-2">
             <button
@@ -335,7 +369,8 @@ export function ConverterPanel({
                 (mode === 'regex-to-nfa' && !regexToNFAResult) ||
                 (mode === 'regex-to-dfa' && !regexToDFAResult) ||
                 (mode === 'nfa-to-regex' && !nfaToRegexResult) ||
-                (mode === 'dfa-to-regex' && !dfaToRegexResult)
+                (mode === 'dfa-to-regex' && !dfaToRegexResult) ||
+                (mode === 'dfa-to-min-dfa' && !minimizeDFAResult)
               }
               className={`px-4 py-1.5 text-xs font-mono rounded font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                 mode === 'nfa-to-dfa'
@@ -348,7 +383,9 @@ export function ConverterPanel({
                         ? 'bg-pink-500 hover:bg-pink-400 text-black'
                         : mode === 'nfa-to-regex'
                           ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
-                          : 'bg-teal-500 hover:bg-teal-400 text-black'
+                          : mode === 'dfa-to-min-dfa'
+                            ? 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                            : 'bg-teal-500 hover:bg-teal-400 text-black'
               }`}
             >
               Apply to Canvas →
