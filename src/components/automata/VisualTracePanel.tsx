@@ -102,22 +102,20 @@ export function VisualTracePanel({
 
         {/* Canvas area */}
         <div className="flex-1 min-h-0 relative overflow-hidden">
-          <>
-            <AutomataCanvas
-              graph={graph}
-              editorState={{
-                tool: 'pan',
-                selectedStateId: null,
-                selectedTransitionId: null,
-                transitionSource: null,
-              }}
-              activeStateIds={activeStateIds}
-              acceptedStateIds={acceptedStateIds}
-              rejectedStateIds={rejectedStateIds}
-              onGraphChange={() => {}} // Read-only
-              onEditorStateChange={() => {}} // Read-only
-            />
-          </>
+          <AutomataCanvas
+            graph={graph}
+            editorState={{
+              tool: 'pan',
+              selectedStateId: null,
+              selectedTransitionId: null,
+              transitionSource: null,
+            }}
+            activeStateIds={activeStateIds}
+            acceptedStateIds={acceptedStateIds}
+            rejectedStateIds={rejectedStateIds}
+            onGraphChange={() => {}} // Read-only
+            onEditorStateChange={() => {}} // Read-only
+          />
         </div>
 
         {/* Step info bar */}
