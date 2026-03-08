@@ -65,7 +65,11 @@ export const groqChatFn = createServerFn({ method: 'POST' })
         For TM transitions, label format is: "read/write,direction" where direction is L, R, or S.
 
         Always position states nicely on a 600x400 canvas. Start state on the left, accept states on the right.
-        Keep explanations concise and educational.`,
+        Keep explanations concise and educational.
+        
+        You are also required to use the least number of states possible, while you can also make as many final states as needed, but be 
+        sure all the time to justify them, and to ensure that it is the smallest possible you can make.
+        `,
     }
 
     const response = await fetch(GROQ_API_URL, {
