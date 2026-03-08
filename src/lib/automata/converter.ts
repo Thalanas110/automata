@@ -327,8 +327,13 @@ function newTransition(from: string, to: string, label: string): Transition {
 export function regexToNFA(pattern: string): AutomataGraph {
   resetCounters()
 
+  // Strip anchors: ^ and $ have no meaning in formal automata theory.
+  // All DFA/NFA matching is implicitly full-string, so anchors only cause
+  // spurious literal symbols in the resulting automaton.
+  const cleanPattern = pattern.replace(/^\^/, '').replace(/\$$/, '')
+
   // Parse and build NFA fragment
-  const fragment = parseRegex(pattern)
+  const fragment = parseRegex(cleanPattern)
 
   // Mark start and accept states
   const states = fragment.states.map((s) => ({
@@ -456,6 +461,13 @@ function parseRegex(pattern: string): NFAFragment {
       // Match any character (simplified as '.')
       consume()
       return symbol('.')
+    }
+
+    // Silently skip anchors that weren't stripped at the top level
+    // (e.g. ^ inside alternation like (^a|b))
+    if (ch === '^' || ch === '$') {
+      consume()
+      return epsilon()
     }
 
     // Regular character
