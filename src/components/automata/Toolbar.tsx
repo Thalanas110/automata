@@ -247,8 +247,8 @@ export function Toolbar({
         </button>
         <button
           onClick={onConvert}
-          title="NFA ↔ DFA Converter"
-          disabled={graph.type !== 'DFA' && graph.type !== 'NFA'}
+          title="Automaton Converter"
+          disabled={graph.type !== 'DFA' && graph.type !== 'NFA' && graph.type !== 'RegEx'}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           <span>⇄</span>
@@ -364,10 +364,10 @@ export function Toolbar({
             </button>
             <button
               onClick={() => { onConvert(); setMenuOpen(false) }}
-              disabled={graph.type !== 'DFA' && graph.type !== 'NFA'}
+              disabled={graph.type !== 'DFA' && graph.type !== 'NFA' && graph.type !== 'RegEx'}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-mono text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              <span>⇄</span> Convert (DFA/NFA)
+              <span>⇄</span> Convert
             </button>
 
             <div className="my-1 border-t border-[#2d3748]" />

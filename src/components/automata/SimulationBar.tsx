@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import type { AutomataGraph } from '@/lib/automata/types'
 import { TracePanel } from './TracePanel'
+import { SimButton } from './lessons/sim-button'
 import type {
   DFAConfig,
   NFAConfig,
@@ -540,36 +541,3 @@ export function SimulationBar({
   )
 }
 
-function SimButton({
-  children,
-  onClick,
-  disabled,
-  variant = 'default',
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  disabled?: boolean
-  variant?: 'default' | 'primary' | 'danger' | 'active'
-}) {
-  const base =
-    'px-2.5 py-1 rounded text-[11px] font-mono transition-all disabled:opacity-40 disabled:cursor-not-allowed'
-  const variants = {
-    default:
-      'bg-[#1a1b1e] text-gray-300 hover:bg-[#22232a] hover:text-white border border-[#2d3748]',
-    primary:
-      'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40',
-    danger:
-      'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20',
-    active:
-      'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40',
-  }
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`${base} ${variants[variant]}`}
-    >
-      {children}
-    </button>
-  )
-}
