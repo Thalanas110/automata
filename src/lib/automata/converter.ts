@@ -438,6 +438,16 @@ function parseRegex(pattern: string): NFAFragment {
   function parseBase(): NFAFragment {
     const ch = peek()
 
+    if (ch === 'ε') {
+      consume()
+      return epsilon()
+    }
+
+    if (ch === '∅') {
+      consume()
+      return emptySet()
+    }
+
     if (ch === '(') {
       consume() // consume '('
       const frag = parseAlternation()
@@ -526,6 +536,17 @@ function epsilon(): NFAFragment {
     accept: accept.id,
     states: [start, accept],
     transitions: [newTransition(start.id, accept.id, 'ε')],
+  }
+}
+
+function emptySet(): NFAFragment {
+  const start = newState()
+  const accept = newState()
+  return {
+    start: start.id,
+    accept: accept.id,
+    states: [start, accept],
+    transitions: [],
   }
 }
 
@@ -670,6 +691,23 @@ export function nfaToRegex(nfa: AutomataGraph): { regex: string } {
     }
   }
 
+  function transitionLabelParts(label: string): string[] {
+    const trimmed = label.trim()
+    if (trimmed === '' || trimmed === 'eps' || trimmed === 'ε') return ['ε']
+    return trimmed
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+  }
+
+  function escapeLiteralSymbol(symbol: string): string {
+    if (symbol === 'ε') return 'ε'
+    if (symbol.startsWith('[') && symbol.endsWith(']')) return symbol
+    if (symbol.startsWith('\\')) return symbol
+    if (/[*+?|()[\]{}^$.]/.test(symbol)) return '\\' + symbol
+    return symbol
+  }
+
   // Add epsilon transitions from new start to old start
   addGNFATransition(newStartId, oldStart.id, 'ε')
 
@@ -680,19 +718,11 @@ export function nfaToRegex(nfa: AutomataGraph): { regex: string } {
 
   // Convert existing NFA transitions to GNFA
   for (const t of nfa.transitions) {
-    let regex = t.label
-    // Convert epsilon to ε symbol
-    if (regex === '' || regex === 'eps') regex = 'ε'
-    // Escape special regex chars if needed (simplified)
-    if (
-      regex !== 'ε' &&
-      !regex.startsWith('[') &&
-      !regex.startsWith('\\') &&
-      /[*+?|()[\]{}^$.]/.test(regex)
-    ) {
-      regex = '\\' + regex
+    const labels = transitionLabelParts(t.label)
+    for (const label of labels) {
+      const regex = escapeLiteralSymbol(label)
+      addGNFATransition(t.from, t.to, regex)
     }
-    addGNFATransition(t.from, t.to, regex)
   }
 
   // List of states to eliminate (all except new start and new accept)
@@ -745,32 +775,7 @@ export function nfaToRegex(nfa: AutomataGraph): { regex: string } {
   // Final regex is the transition from new start to new accept
   const finalRegex = gnfa.get(newStartId)?.get(newAcceptId) ?? '∅'
 
-  return { regex: simplifyRegex(finalRegex) }
-}
-
-/**
- * Simplify regex by removing unnecessary epsilons and parentheses (basic cleanup)
- */
-function simplifyRegex(regex: string): string {
-  let simplified = regex
-
-  // Remove standalone epsilon
-  simplified = simplified.replace(/ε/g, '')
-
-  // Replace empty alternations
-  simplified = simplified.replace(/\|\)/g, ')')
-  simplified = simplified.replace(/\(\|/g, '(')
-
-  // Remove empty parentheses
-  simplified = simplified.replace(/\(\)/g, '')
-
-  // Replace (r) with r if no special chars
-  simplified = simplified.replace(/\(([a-zA-Z0-9])\)/g, '$1')
-
-  // If completely empty, return ε
-  if (simplified === '') simplified = 'ε'
-
-  return simplified
+  return { regex: finalRegex }
 }
 
 export function dfaToRegex(dfa: AutomataGraph): { regex: string } {
